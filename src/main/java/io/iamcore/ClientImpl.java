@@ -63,12 +63,12 @@ public class ClientImpl implements Client {
 
   @Override
   public Set<String> authorize(HttpHeader authorizationHeader, String application, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
-    if (StringUtils.isEmpty(action)) {
-      throw new SdkException("Action must be defined");
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
     }
 
-    if (disabled) {
-      return resourceIds;
+    if (StringUtils.isEmpty(action)) {
+      throw new SdkException("Action must be defined");
     }
 
     if (Objects.nonNull(resourceIds) && !resourceIds.isEmpty()) {
@@ -93,7 +93,7 @@ public class ClientImpl implements Client {
   public void createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
       String resourceId) {
     if (disabled) {
-      return;
+      throw new SdkException("Iamcore disabled");
     }
 
     CreateResourceRequestDto requestDto = new CreateResourceRequestDto(application, tenantId, resourceType, resourcePath, resourceId, true);
@@ -104,7 +104,7 @@ public class ClientImpl implements Client {
   public void deleteResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
       String resourceId) {
     if (disabled) {
-      return;
+      throw new SdkException("Iamcore disabled");
     }
 
     IRN principalIRN = serverClient.getPrincipalIRN(authorizationHeader);
