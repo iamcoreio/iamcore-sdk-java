@@ -2,9 +2,12 @@ package io.iamcore.server;
 
 import io.iamcore.HttpHeader;
 import io.iamcore.IRN;
-import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.exception.IamcoreServerException;
 import io.iamcore.exception.SdkException;
+import io.iamcore.server.dto.CreateResourceRequestDto;
+
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -19,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.json.JSONObject;
 
 
 public class ServerClientImpl implements ServerClient {
@@ -28,6 +30,7 @@ public class ServerClientImpl implements ServerClient {
   private static final String EVALUATE_ON_RESOURCES_PATH = "/api/v1/evaluate";
   private static final String EVALUATE_ON_RESOURCE_TYPE_PATH = "/api/v1/evaluate/resources";
   private static final String RESOURCE_PATH = "/api/v1/resources";
+  private static final int PAGE_SIZE = 100000;
 
   private final URI serverURL;
 
@@ -84,8 +87,10 @@ public class ServerClientImpl implements ServerClient {
     requestBody.put("resourceType", resourceType);
     requestBody.put("application", application);
 
+    String url = String.format("%s?pageSize=%s", EVALUATE_ON_RESOURCE_TYPE_PATH, PAGE_SIZE);
+
     try {
-      HttpURLConnection connection = sendRequest(EVALUATE_ON_RESOURCE_TYPE_PATH, "POST", header, requestBody);
+      HttpURLConnection connection = sendRequest(url, "POST", header, requestBody);
       int responseCode = connection.getResponseCode();
 
       if (responseCode == HttpURLConnection.HTTP_OK) {
