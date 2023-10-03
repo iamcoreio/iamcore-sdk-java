@@ -13,7 +13,7 @@ public interface ServerClient {
   void authorizeOnResources(HttpHeader authorizationHeader, String action, List<IRN> resources);
 
   List<IRN> authorizedOnResourceType(HttpHeader header, String action, String application,
-      String resourceType);
+      String tenantId, String resourceType);
 
   void createResource(HttpHeader header, CreateResourceRequestDto requestDto);
 

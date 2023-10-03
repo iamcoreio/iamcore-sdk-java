@@ -2,6 +2,7 @@ package io.iamcore.server;
 
 import io.iamcore.HttpHeader;
 import io.iamcore.IRN;
+import io.iamcore.StringUtils;
 import io.iamcore.exception.IamcoreServerException;
 import io.iamcore.exception.SdkException;
 import io.iamcore.server.dto.CreateResourceRequestDto;
@@ -81,11 +82,15 @@ public class ServerClientImpl implements ServerClient {
 
   @Override
   public List<IRN> authorizedOnResourceType(HttpHeader header, String action, String application,
-      String resourceType) {
+      String tenantId, String resourceType) {
     JSONObject requestBody = new JSONObject();
     requestBody.put("action", action);
     requestBody.put("resourceType", resourceType);
     requestBody.put("application", application);
+
+    if (!StringUtils.isEmpty(tenantId)) {
+      requestBody.put("tenantID", tenantId);
+    }
 
     String url = String.format("%s?pageSize=%s", EVALUATE_ON_RESOURCE_TYPE_PATH, PAGE_SIZE);
 

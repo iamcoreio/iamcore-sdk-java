@@ -8,7 +8,7 @@ public interface Client {
 
   void authenticate(HttpServletRequest request);
 
-  Set<String> authorize(HttpHeader authorizationHeader,String application, String resourceType, String resourcePath, Set<String> resourceIds,
+  Set<String> authorize(HttpHeader authorizationHeader,String application, String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
       String action);
 
   void createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,

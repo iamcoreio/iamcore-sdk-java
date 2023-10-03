@@ -62,7 +62,8 @@ public class ClientImpl implements Client {
   }
 
   @Override
-  public Set<String> authorize(HttpHeader authorizationHeader, String application, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
+  public Set<String> authorize(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
+      Set<String> resourceIds, String action) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
@@ -75,8 +76,7 @@ public class ClientImpl implements Client {
       IRN principalIRN = getSecurityContext().getPrincipalIRN();
 
       List<IRN> resourceIRNs = resourceIds.stream()
-          .map(resourceID -> IRN.of(principalIRN.getAccountId(), application, principalIRN.getTenantId(), null, resourceType,
-              resourcePath, resourceID))
+          .map(resourceID -> IRN.of(principalIRN.getAccountId(), application, tenantId, null, resourceType, resourcePath, resourceID))
           .collect(Collectors.toList());
 
       serverClient.authorizeOnResources(authorizationHeader, action, resourceIRNs);
@@ -84,7 +84,7 @@ public class ClientImpl implements Client {
       return resourceIds;
     }
 
-    return serverClient.authorizedOnResourceType(authorizationHeader, action, application, resourceType).stream()
+    return serverClient.authorizedOnResourceType(authorizationHeader, action, application, tenantId, resourceType).stream()
         .map(IRN::getResourceId)
         .collect(Collectors.toSet());
   }
