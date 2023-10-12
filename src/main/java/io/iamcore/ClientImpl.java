@@ -1,9 +1,9 @@
 package io.iamcore;
 
-import static io.iamcore.authentication.context.SecurityContextHolder.getSecurityContext;
 import static io.iamcore.authentication.context.SecurityContextHolder.initializeSecurityContext;
 
 import io.iamcore.authentication.Authenticator;
+import io.iamcore.authentication.EmptyHeaderAuthenticator;
 import io.iamcore.authentication.HttpHeaderAuthenticator;
 import io.iamcore.authentication.context.SecurityContext;
 import io.iamcore.exception.SdkException;
@@ -39,7 +39,8 @@ public class ClientImpl implements Client {
 
     HttpHeaderAuthenticator bearerAuthenticator = new HttpHeaderAuthenticator(serverClient, AUTHORIZATION_HEADER_NAME);
     HttpHeaderAuthenticator apiKeyAuthenticator = new HttpHeaderAuthenticator(serverClient, API_KEY_HEADER_NAME);
-    this.authenticators = Arrays.asList(bearerAuthenticator, apiKeyAuthenticator);
+    EmptyHeaderAuthenticator emptyHeaderAuthenticator = new EmptyHeaderAuthenticator(serverClient);
+    this.authenticators = Arrays.asList(bearerAuthenticator, apiKeyAuthenticator, emptyHeaderAuthenticator);
   }
 
   @Override
@@ -62,8 +63,8 @@ public class ClientImpl implements Client {
   }
 
   @Override
-  public Set<String> authorize(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
-      Set<String> resourceIds, String action) {
+  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application, String tenantId, String resourceType,
+      String resourcePath, Set<String> resourceIds, String action) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
@@ -73,10 +74,8 @@ public class ClientImpl implements Client {
     }
 
     if (Objects.nonNull(resourceIds) && !resourceIds.isEmpty()) {
-      IRN principalIRN = getSecurityContext().getPrincipalIRN();
-
       List<IRN> resourceIRNs = resourceIds.stream()
-          .map(resourceID -> IRN.of(principalIRN.getAccountId(), application, tenantId, null, resourceType, resourcePath, resourceID))
+          .map(resourceID -> IRN.of(accountId, application, tenantId, null, resourceType, resourcePath, resourceID))
           .collect(Collectors.toList());
 
       serverClient.authorizeOnResources(authorizationHeader, action, resourceIRNs);

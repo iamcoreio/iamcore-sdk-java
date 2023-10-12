@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -154,7 +155,10 @@ public class ServerClientImpl implements ServerClient {
     HttpURLConnection connection = (HttpURLConnection) requestUrl.openConnection();
     connection.setRequestMethod(method);
 
-    connection.setRequestProperty(header.getName(), header.getValue());
+    if (Objects.nonNull(header)) {
+      connection.setRequestProperty(header.getName(), header.getValue());
+    }
+
     if (Arrays.asList("POST", "PUT", "OPTIONS").contains(method)) {
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");

@@ -10,8 +10,8 @@ public class SecurityContext {
   private final IRN principalIRN;
 
   public SecurityContext(HttpHeader authorizationHeader, IRN principalIRN) {
-    if (authorizationHeader == null || principalIRN == null) {
-      throw new SdkException("SecurityContext initialization failed: principal IRN or authorization header is null");
+    if (principalIRN == null) {
+      throw new SdkException("SecurityContext initialization failed: principal IRN is null");
     }
 
     this.authorizationHeader = authorizationHeader;
