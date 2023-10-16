@@ -155,7 +155,7 @@ public class ServerClientImpl implements ServerClient {
     HttpURLConnection connection = (HttpURLConnection) requestUrl.openConnection();
     connection.setRequestMethod(method);
 
-    if (Objects.nonNull(header)) {
+    if (header != null) {
       connection.setRequestProperty(header.getName(), header.getValue());
     }
 

@@ -3,7 +3,7 @@ package io.iamcore;
 import static io.iamcore.authentication.context.SecurityContextHolder.initializeSecurityContext;
 
 import io.iamcore.authentication.Authenticator;
-import io.iamcore.authentication.EmptyHeaderAuthenticator;
+import io.iamcore.authentication.AnonymousAuthenticator;
 import io.iamcore.authentication.HttpHeaderAuthenticator;
 import io.iamcore.authentication.context.SecurityContext;
 import io.iamcore.exception.SdkException;
@@ -11,7 +11,6 @@ import io.iamcore.server.ServerClient;
 import io.iamcore.server.ServerClientImpl;
 import io.iamcore.server.dto.CreateResourceRequestDto;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,7 +24,8 @@ public class ClientImpl implements Client {
   public static final String AUTHORIZATION_HEADER_NAME = "Authorization";
   public static final String API_KEY_HEADER_NAME = "X-iamcore-API-Key";
 
-  private final List<Authenticator> authenticators;
+  private final Authenticator[] authenticators;
+  private final AnonymousAuthenticator anonymousAuthenticator;
   private final boolean disabled;
   private final HttpHeader apiKeyHeader;
   private final ServerClient serverClient;
@@ -39,8 +39,11 @@ public class ClientImpl implements Client {
 
     HttpHeaderAuthenticator bearerAuthenticator = new HttpHeaderAuthenticator(serverClient, AUTHORIZATION_HEADER_NAME);
     HttpHeaderAuthenticator apiKeyAuthenticator = new HttpHeaderAuthenticator(serverClient, API_KEY_HEADER_NAME);
-    EmptyHeaderAuthenticator emptyHeaderAuthenticator = new EmptyHeaderAuthenticator(serverClient);
-    this.authenticators = Arrays.asList(bearerAuthenticator, apiKeyAuthenticator, emptyHeaderAuthenticator);
+    this.authenticators = new Authenticator[]{
+        bearerAuthenticator,
+        apiKeyAuthenticator,
+    };
+    this.anonymousAuthenticator = new AnonymousAuthenticator(serverClient);
   }
 
   @Override
@@ -59,7 +62,7 @@ public class ClientImpl implements Client {
       }
     }
 
-    throw new SdkException("Failed to authenticate request with any of available authenticators");
+    initializeSecurityContext(anonymousAuthenticator.authenticate());
   }
 
   @Override
