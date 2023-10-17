@@ -1,9 +1,9 @@
 package io.iamcore;
 
-import static io.iamcore.authentication.context.SecurityContextHolder.getSecurityContext;
 import static io.iamcore.authentication.context.SecurityContextHolder.initializeSecurityContext;
 
 import io.iamcore.authentication.Authenticator;
+import io.iamcore.authentication.AnonymousAuthenticator;
 import io.iamcore.authentication.HttpHeaderAuthenticator;
 import io.iamcore.authentication.context.SecurityContext;
 import io.iamcore.exception.SdkException;
@@ -11,7 +11,6 @@ import io.iamcore.server.ServerClient;
 import io.iamcore.server.ServerClientImpl;
 import io.iamcore.server.dto.CreateResourceRequestDto;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,7 +24,8 @@ public class ClientImpl implements Client {
   public static final String AUTHORIZATION_HEADER_NAME = "Authorization";
   public static final String API_KEY_HEADER_NAME = "X-iamcore-API-Key";
 
-  private final List<Authenticator> authenticators;
+  private final Authenticator[] authenticators;
+  private final AnonymousAuthenticator anonymousAuthenticator;
   private final boolean disabled;
   private final HttpHeader apiKeyHeader;
   private final ServerClient serverClient;
@@ -39,7 +39,11 @@ public class ClientImpl implements Client {
 
     HttpHeaderAuthenticator bearerAuthenticator = new HttpHeaderAuthenticator(serverClient, AUTHORIZATION_HEADER_NAME);
     HttpHeaderAuthenticator apiKeyAuthenticator = new HttpHeaderAuthenticator(serverClient, API_KEY_HEADER_NAME);
-    this.authenticators = Arrays.asList(bearerAuthenticator, apiKeyAuthenticator);
+    this.authenticators = new Authenticator[]{
+        bearerAuthenticator,
+        apiKeyAuthenticator,
+    };
+    this.anonymousAuthenticator = new AnonymousAuthenticator(serverClient);
   }
 
   @Override
@@ -58,12 +62,12 @@ public class ClientImpl implements Client {
       }
     }
 
-    throw new SdkException("Failed to authenticate request with any of available authenticators");
+    initializeSecurityContext(anonymousAuthenticator.authenticate());
   }
 
   @Override
-  public Set<String> authorize(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
-      Set<String> resourceIds, String action) {
+  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application, String tenantId, String resourceType,
+      String resourcePath, Set<String> resourceIds, String action) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
@@ -73,10 +77,8 @@ public class ClientImpl implements Client {
     }
 
     if (Objects.nonNull(resourceIds) && !resourceIds.isEmpty()) {
-      IRN principalIRN = getSecurityContext().getPrincipalIRN();
-
       List<IRN> resourceIRNs = resourceIds.stream()
-          .map(resourceID -> IRN.of(principalIRN.getAccountId(), application, tenantId, null, resourceType, resourcePath, resourceID))
+          .map(resourceID -> IRN.of(accountId, application, tenantId, null, resourceType, resourcePath, resourceID))
           .collect(Collectors.toList());
 
       serverClient.authorizeOnResources(authorizationHeader, action, resourceIRNs);
