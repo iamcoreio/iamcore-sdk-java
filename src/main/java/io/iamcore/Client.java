@@ -1,5 +1,7 @@
 package io.iamcore;
 
+import io.iamcore.server.dto.Database;
+
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,11 +13,11 @@ public interface Client {
   Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application, String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
       String action);
 
-  void createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
-      String resourceId);
+  String authorizationDBQueryFilter(HttpHeader authorizationHeader, String action, Database database);
 
-  void deleteResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
-      String resourceId);
+  IRN createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath, String resourceId);
+
+  void deleteResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath, String resourceId);
 
   HttpHeader getApiKeyHeader();
 }

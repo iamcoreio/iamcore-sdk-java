@@ -6,6 +6,7 @@ import io.iamcore.StringUtils;
 import io.iamcore.exception.IamcoreServerException;
 import io.iamcore.exception.SdkException;
 import io.iamcore.server.dto.CreateResourceRequestDto;
+import io.iamcore.server.dto.Database;
 
 import org.json.JSONObject;
 
@@ -21,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -31,6 +31,7 @@ public class ServerClientImpl implements ServerClient {
   private static final String USER_IRN_PATH = "/api/v1/users/me/irn";
   private static final String EVALUATE_ON_RESOURCES_PATH = "/api/v1/evaluate";
   private static final String EVALUATE_ON_RESOURCE_TYPE_PATH = "/api/v1/evaluate/resources";
+  private static final String AUTHORIZATION_QUERY_FILTER_PATH = "/api/v1/evaluate/database-query-filter";
   private static final String RESOURCE_PATH = "/api/v1/resources";
   private static final int PAGE_SIZE = 100000;
 
@@ -121,15 +122,40 @@ public class ServerClientImpl implements ServerClient {
   }
 
   @Override
-  public void createResource(HttpHeader header, CreateResourceRequestDto requestDto) {
+  public String authorizationDBQueryFilter(HttpHeader authorizationHeader, String action, Database database) {
+    JSONObject requestBody = new JSONObject();
+    requestBody.put("action", action);
+    requestBody.put("database", database);
+
     try {
-      HttpURLConnection connection = sendRequest(RESOURCE_PATH, "POST", header, requestDto.toJson());
+      HttpURLConnection connection = sendRequest(AUTHORIZATION_QUERY_FILTER_PATH, "POST", authorizationHeader, requestBody);
       int responseCode = connection.getResponseCode();
 
-      if (responseCode != HttpURLConnection.HTTP_CREATED) {
-        JSONObject response = convertErrorStream(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
+      if (responseCode == HttpURLConnection.HTTP_OK) {
+        JSONObject response = convertInputStream(connection);
+        return response.getString("data");
       }
+
+      JSONObject response = convertErrorStream(connection);
+      throw new IamcoreServerException(response.getString("message"), responseCode);
+    } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  @Override
+  public IRN createResource(HttpHeader authorizationHeader, CreateResourceRequestDto requestDto) {
+    try {
+      HttpURLConnection connection = sendRequest(RESOURCE_PATH, "POST", authorizationHeader, requestDto.toJson());
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode == HttpURLConnection.HTTP_CREATED) {
+        JSONObject response = convertInputStream(connection);
+        return IRN.from(response.getJSONObject("data").getString("irn"));
+      }
+
+      JSONObject response = convertErrorStream(connection);
+      throw new IamcoreServerException(response.getString("message"), responseCode);
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
     }

@@ -3,6 +3,7 @@ package io.iamcore.server;
 import io.iamcore.HttpHeader;
 import io.iamcore.IRN;
 import io.iamcore.server.dto.CreateResourceRequestDto;
+import io.iamcore.server.dto.Database;
 
 import java.util.List;
 
@@ -15,7 +16,9 @@ public interface ServerClient {
   List<IRN> authorizedOnResourceType(HttpHeader header, String action, String application,
       String tenantId, String resourceType);
 
-  void createResource(HttpHeader header, CreateResourceRequestDto requestDto);
+  String authorizationDBQueryFilter(HttpHeader header, String action, Database database);
+
+  IRN createResource(HttpHeader header, CreateResourceRequestDto requestDto);
 
   void deleteResource(HttpHeader header, IRN resourceIrn);
 }

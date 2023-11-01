@@ -10,6 +10,7 @@ import io.iamcore.exception.SdkException;
 import io.iamcore.server.ServerClient;
 import io.iamcore.server.ServerClientImpl;
 import io.iamcore.server.dto.CreateResourceRequestDto;
+import io.iamcore.server.dto.Database;
 
 import java.util.List;
 import java.util.Objects;
@@ -92,14 +93,30 @@ public class ClientImpl implements Client {
   }
 
   @Override
-  public void createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
-      String resourceId) {
+  public String authorizationDBQueryFilter(HttpHeader authorizationHeader, String action, Database database) {
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
+    }
+
+    if (StringUtils.isEmpty(action)) {
+      throw new SdkException("Action must be defined");
+    }
+
+    if (database == null) {
+      throw new SdkException("Database must be defined");
+    }
+
+    return serverClient.authorizationDBQueryFilter(authorizationHeader, action, database);
+  }
+
+  @Override
+  public IRN createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath, String resourceId) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
 
     CreateResourceRequestDto requestDto = new CreateResourceRequestDto(application, tenantId, resourceType, resourcePath, resourceId, true);
-    serverClient.createResource(authorizationHeader, requestDto);
+    return serverClient.createResource(authorizationHeader, requestDto);
   }
 
   @Override
