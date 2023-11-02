@@ -125,7 +125,7 @@ public class ServerClientImpl implements ServerClient {
   public String authorizationDBQueryFilter(HttpHeader authorizationHeader, String action, Database database) {
     JSONObject requestBody = new JSONObject();
     requestBody.put("action", action);
-    requestBody.put("database", database);
+    requestBody.put("database", database.getValue());
 
     try {
       HttpURLConnection connection = sendRequest(AUTHORIZATION_QUERY_FILTER_PATH, "POST", authorizationHeader, requestBody);
