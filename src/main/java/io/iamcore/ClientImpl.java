@@ -2,6 +2,10 @@ package io.iamcore;
 
 import static io.iamcore.authentication.context.SecurityContextHolder.initializeSecurityContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import io.iamcore.authentication.Authenticator;
 import io.iamcore.authentication.AnonymousAuthenticator;
 import io.iamcore.authentication.HttpHeaderAuthenticator;
@@ -10,7 +14,9 @@ import io.iamcore.exception.SdkException;
 import io.iamcore.server.ServerClient;
 import io.iamcore.server.ServerClientImpl;
 import io.iamcore.server.dto.CreateResourceRequestDto;
+import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
+import io.iamcore.server.dto.ResourceTypeDto;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +38,11 @@ public class ClientImpl implements Client {
   private final ServerClient serverClient;
 
   public ClientImpl(ClientProperties properties) {
-    ServerClient serverClient = new ServerClientImpl(properties.getServerURL());
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+    ServerClient serverClient = new ServerClientImpl(properties.getServerURL(), objectMapper);
 
     this.serverClient = serverClient;
     this.disabled = properties.isDisabled();
@@ -130,6 +140,30 @@ public class ClientImpl implements Client {
     IRN resourceIRN = IRN.of(principalIRN.getAccountId(), application, tenantId, null, resourceType, resourcePath, resourceId);
 
     serverClient.deleteResource(authorizationHeader, resourceIRN);
+  }
+
+  @Override
+  public void createResourceType(HttpHeader authorizationHeader, String accountId, String application, String type, String description,
+      String actionPrefix, Set<String> operations) {
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
+    }
+
+    IRN applicationIRN = IRN.of(accountId, "iamcore", "", null, "application", null, application);
+    CreateResourceTypeRequestDto requestDto = new CreateResourceTypeRequestDto(type, description, actionPrefix, operations);
+
+    serverClient.createResourceType(authorizationHeader, applicationIRN, requestDto);
+  }
+
+  @Override
+  public List<ResourceTypeDto> getResourceTypes(HttpHeader authorizationHeader, String accountId, String application) {
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
+    }
+
+    IRN applicationIRN = IRN.of(accountId, "iamcore", "", null, "application", null, application);
+
+    return serverClient.getResourceTypes(authorizationHeader, applicationIRN);
   }
 
   @Override

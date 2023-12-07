@@ -1,12 +1,18 @@
 package io.iamcore.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.iamcore.HttpHeader;
 import io.iamcore.IRN;
 import io.iamcore.StringUtils;
 import io.iamcore.exception.IamcoreServerException;
 import io.iamcore.exception.SdkException;
 import io.iamcore.server.dto.CreateResourceRequestDto;
+import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
+import io.iamcore.server.dto.ResourceTypeDto;
 
 import org.json.JSONObject;
 
@@ -21,6 +27,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,12 +40,16 @@ public class ServerClientImpl implements ServerClient {
   private static final String EVALUATE_ON_RESOURCE_TYPE_PATH = "/api/v1/evaluate/resources";
   private static final String AUTHORIZATION_QUERY_FILTER_PATH = "/api/v1/evaluate/database-query-filter";
   private static final String RESOURCE_PATH = "/api/v1/resources";
+  private static final String APPLICATION_PATH = "/api/v1/applications";
+  private static final String RESOURCE_TYPE_PATH = APPLICATION_PATH + "/%s/resource-types";
   private static final int PAGE_SIZE = 100000;
 
   private final URI serverURL;
+  private final ObjectMapper objectMapper;
 
-  public ServerClientImpl(URI serverURL) {
+  public ServerClientImpl(URI serverURL, ObjectMapper objectMapper) {
     this.serverURL = serverURL;
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -171,6 +182,52 @@ public class ServerClientImpl implements ServerClient {
         JSONObject response = convertErrorStream(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
+    } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  @Override
+  public void createResourceType(HttpHeader header, IRN application, CreateResourceTypeRequestDto requestDto) {
+    String url = String.format(RESOURCE_TYPE_PATH, application.toBase64());
+
+    try {
+      HttpURLConnection connection = sendRequest(url, "POST", header, requestDto.toJson());
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode != HttpURLConnection.HTTP_CREATED) {
+        JSONObject response = convertErrorStream(connection);
+        throw new IamcoreServerException(response.getString("message"), responseCode);
+      }
+    } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  @Override
+  public List<ResourceTypeDto> getResourceTypes(HttpHeader header, IRN applicationIRN) {
+    String url = String.format(RESOURCE_TYPE_PATH + "?pageSize=%s", applicationIRN.toBase64(), PAGE_SIZE);
+
+    try {
+      HttpURLConnection connection = sendRequest(url, "GET", header, null);
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode == HttpURLConnection.HTTP_OK) {
+        JSONObject response = convertInputStream(connection);
+
+        return Optional.ofNullable(response.get("data"))
+            .map(resourceTypes -> {
+              try {
+                return objectMapper.readValue(resourceTypes.toString(), new TypeReference<List<ResourceTypeDto>>() {});
+              } catch (JsonProcessingException ex) {
+                throw new SdkException(ex.getMessage());
+              }
+            })
+            .orElse(Collections.emptyList());
+      }
+
+      JSONObject response = convertErrorStream(connection);
+      throw new IamcoreServerException(response.getString("message"), responseCode);
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
     }
