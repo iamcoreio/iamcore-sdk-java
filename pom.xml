@@ -11,21 +11,21 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <servlet-api.version>3.1.0</servlet-api.version>
+        <jakarta.servlet-api>6.0.0</jakarta.servlet-api>
         <iamcore-irn.version>1.0.0</iamcore-irn.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <checkstyle-maven-plugin.version>3.1.1</checkstyle-maven-plugin.version>
         <om.puppycrawl.tools.version>8.44</om.puppycrawl.tools.version>
         <jackson-databind.version>2.16.0</jackson-databind.version>
         <jackson.datatype.version>2.16.0</jackson.datatype.version>
-        <json.version>20230227</json.version>
+        <json.version>20231013</json.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${servlet-api.version}</version>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servlet-api}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
