@@ -6,7 +6,7 @@ import io.iamcore.server.dto.ResourceTypeDto;
 import java.util.List;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface Client {
 

@@ -2,9 +2,9 @@ package io.iamcore.authentication;
 
 import io.iamcore.authentication.context.SecurityContext;
 
-import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
 public interface Authenticator {
 

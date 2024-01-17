@@ -6,9 +6,9 @@ import io.iamcore.StringUtils;
 import io.iamcore.authentication.context.SecurityContext;
 import io.iamcore.server.ServerClient;
 
-import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
 public class HttpHeaderAuthenticator implements Authenticator {
 
