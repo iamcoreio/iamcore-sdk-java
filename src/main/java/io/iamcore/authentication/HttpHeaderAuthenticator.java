@@ -5,9 +5,7 @@ import io.iamcore.IRN;
 import io.iamcore.StringUtils;
 import io.iamcore.authentication.context.SecurityContext;
 import io.iamcore.server.ServerClient;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.util.Optional;
 
 public class HttpHeaderAuthenticator implements Authenticator {
@@ -29,7 +27,7 @@ public class HttpHeaderAuthenticator implements Authenticator {
 
     HttpHeader httpHeader = new HttpHeader(authorizationHeaderName, authorizationHeader);
 
-    IRN principalIRN = serverClient.getPrincipalIRN(httpHeader);
-    return Optional.of(new SecurityContext(httpHeader, principalIRN));
+    IRN principalIrn = serverClient.getPrincipalIrn(httpHeader);
+    return Optional.of(new SecurityContext(httpHeader, principalIrn));
   }
 }

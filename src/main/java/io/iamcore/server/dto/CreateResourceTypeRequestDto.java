@@ -2,12 +2,9 @@ package io.iamcore.server.dto;
 
 import io.iamcore.StringUtils;
 import io.iamcore.exception.SdkException;
-
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class CreateResourceTypeRequestDto {
   private final String type;

@@ -14,7 +14,7 @@
         <jakarta.servlet-api>6.0.0</jakarta.servlet-api>
         <iamcore-irn.version>0.0.3</iamcore-irn.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <checkstyle-maven-plugin.version>3.1.1</checkstyle-maven-plugin.version>
+        <checkstyle-maven-plugin.version>3.3.1</checkstyle-maven-plugin.version>
         <om.puppycrawl.tools.version>8.44</om.puppycrawl.tools.version>
         <jackson-databind.version>2.16.0</jackson-databind.version>
         <jackson.datatype.version>2.16.0</jackson.datatype.version>
@@ -65,28 +65,21 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${checkstyle-maven-plugin.version}</version>
+                <configuration>
+                    <configLocation>checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>checkstyle</id>
+                        <id>validate</id>
                         <phase>validate</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${om.puppycrawl.tools.version}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <configLocation>google_checks.xml</configLocation>
-                    <encoding>UTF-8</encoding>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                </configuration>
             </plugin>
         </plugins>
     </build>

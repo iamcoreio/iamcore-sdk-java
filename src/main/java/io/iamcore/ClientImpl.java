@@ -5,9 +5,8 @@ import static io.iamcore.authentication.context.SecurityContextHolder.initialize
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import io.iamcore.authentication.Authenticator;
 import io.iamcore.authentication.AnonymousAuthenticator;
+import io.iamcore.authentication.Authenticator;
 import io.iamcore.authentication.HttpHeaderAuthenticator;
 import io.iamcore.authentication.context.SecurityContext;
 import io.iamcore.exception.SdkException;
@@ -17,14 +16,12 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.ResourceTypeDto;
-
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 public class ClientImpl implements Client {
 
@@ -42,14 +39,16 @@ public class ClientImpl implements Client {
     objectMapper.registerModule(new JavaTimeModule());
     objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-    ServerClient serverClient = new ServerClientImpl(properties.getServerURL(), objectMapper);
+    ServerClient serverClient = new ServerClientImpl(properties.getServerUrl(), objectMapper);
 
     this.serverClient = serverClient;
     this.disabled = properties.isDisabled();
     this.apiKeyHeader = new HttpHeader(API_KEY_HEADER_NAME, properties.getApiKey());
 
-    HttpHeaderAuthenticator bearerAuthenticator = new HttpHeaderAuthenticator(serverClient, AUTHORIZATION_HEADER_NAME);
-    HttpHeaderAuthenticator apiKeyAuthenticator = new HttpHeaderAuthenticator(serverClient, API_KEY_HEADER_NAME);
+    HttpHeaderAuthenticator bearerAuthenticator = new HttpHeaderAuthenticator(serverClient,
+        AUTHORIZATION_HEADER_NAME);
+    HttpHeaderAuthenticator apiKeyAuthenticator = new HttpHeaderAuthenticator(serverClient,
+        API_KEY_HEADER_NAME);
     this.authenticators = new Authenticator[]{
         bearerAuthenticator,
         apiKeyAuthenticator,
@@ -77,7 +76,8 @@ public class ClientImpl implements Client {
   }
 
   @Override
-  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application, String tenantId, String resourceType,
+  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
+      String tenantId, String resourceType,
       String resourcePath, Set<String> resourceIds, String action) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
@@ -88,22 +88,25 @@ public class ClientImpl implements Client {
     }
 
     if (Objects.nonNull(resourceIds) && !resourceIds.isEmpty()) {
-      List<IRN> resourceIRNs = resourceIds.stream()
-          .map(resourceID -> IRN.of(accountId, application, tenantId, null, resourceType, resourcePath, resourceID))
+      List<IRN> resourceIrns = resourceIds.stream()
+          .map(resourceID -> IRN.of(accountId, application, tenantId, null, resourceType,
+              resourcePath, resourceID))
           .collect(Collectors.toList());
 
-      serverClient.authorizeOnResources(authorizationHeader, action, resourceIRNs);
+      serverClient.authorizeOnResources(authorizationHeader, action, resourceIrns);
 
       return resourceIds;
     }
 
-    return serverClient.authorizedOnResourceType(authorizationHeader, action, application, tenantId, resourceType).stream()
+    return serverClient.authorizedOnResourceType(authorizationHeader, action, application, tenantId,
+            resourceType).stream()
         .map(IRN::getResourceId)
         .collect(Collectors.toSet());
   }
 
   @Override
-  public String authorizationDBQueryFilter(HttpHeader authorizationHeader, String action, Database database) {
+  public String authorizationDbQueryFilter(HttpHeader authorizationHeader, String action,
+      Database database) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
@@ -116,58 +119,78 @@ public class ClientImpl implements Client {
       throw new SdkException("Database must be defined");
     }
 
-    return serverClient.authorizationDBQueryFilter(authorizationHeader, action, database);
+    return serverClient.authorizationDbQueryFilter(authorizationHeader, action, database);
   }
 
   @Override
-  public IRN createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath, String resourceId) {
+  public IRN createResource(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath, String resourceId) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
 
-    CreateResourceRequestDto requestDto = new CreateResourceRequestDto(application, tenantId, resourceType, resourcePath, resourceId, true);
+    CreateResourceRequestDto requestDto = new CreateResourceRequestDto(application, tenantId,
+        resourceType, resourcePath, resourceId, true);
     return serverClient.createResource(authorizationHeader, requestDto);
   }
 
   @Override
-  public void deleteResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath,
+  public void deleteResource(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath,
       String resourceId) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
 
-    IRN principalIRN = serverClient.getPrincipalIRN(authorizationHeader);
-    IRN resourceIRN = IRN.of(principalIRN.getAccountId(), application, tenantId, null, resourceType, resourcePath, resourceId);
+    IRN principalIrn = serverClient.getPrincipalIrn(authorizationHeader);
+    IRN resourceIrn = IRN.of(principalIrn.getAccountId(), application, tenantId, null, resourceType,
+        resourcePath, resourceId);
 
-    serverClient.deleteResource(authorizationHeader, resourceIRN);
+    serverClient.deleteResource(authorizationHeader, resourceIrn);
   }
 
   @Override
-  public void createResourceType(HttpHeader authorizationHeader, String accountId, String application, String type, String description,
+  public void createResourceType(HttpHeader authorizationHeader, String accountId,
+      String application, String type, String description,
       String actionPrefix, Set<String> operations) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
 
-    IRN applicationIRN = IRN.of(accountId, "iamcore", "", null, "application", null, application);
-    CreateResourceTypeRequestDto requestDto = new CreateResourceTypeRequestDto(type, description, actionPrefix, operations);
+    IRN applicationIrn = IRN.of(accountId, "iamcore", "", null, "application", null, application);
+    CreateResourceTypeRequestDto requestDto = new CreateResourceTypeRequestDto(type, description,
+        actionPrefix, operations);
 
-    serverClient.createResourceType(authorizationHeader, applicationIRN, requestDto);
+    serverClient.createResourceType(authorizationHeader, applicationIrn, requestDto);
   }
 
   @Override
-  public List<ResourceTypeDto> getResourceTypes(HttpHeader authorizationHeader, String accountId, String application) {
+  public List<ResourceTypeDto> getResourceTypes(HttpHeader authorizationHeader, String accountId,
+      String application) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
 
-    IRN applicationIRN = IRN.of(accountId, "iamcore", "", null, "application", null, application);
+    IRN applicationIrn = IRN.of(accountId, "iamcore", "", null, "application", null, application);
 
-    return serverClient.getResourceTypes(authorizationHeader, applicationIRN);
+    return serverClient.getResourceTypes(authorizationHeader, applicationIrn);
   }
 
   @Override
-  public HttpHeader getApiKeyHeader() {
+  public HttpHeader getApplicationApiKeyHeader() {
     return apiKeyHeader;
+  }
+
+  @Override
+  public HttpHeader getTenantApiKeyHeader(String accountId, String tenantId) {
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
+    }
+
+    IRN tenantIrn = IRN.of(accountId, "iamcore", tenantId, null, "tenant", null, tenantId);
+    String apiKey = serverClient.getPrincipalApiKey(apiKeyHeader, tenantIrn)
+        .orElseGet(() -> serverClient.createPrincipalApiKey(apiKeyHeader, tenantIrn));
+
+    return new HttpHeader(API_KEY_HEADER_NAME, apiKey);
   }
 }

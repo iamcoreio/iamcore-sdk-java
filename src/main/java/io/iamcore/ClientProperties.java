@@ -1,7 +1,6 @@
 package io.iamcore;
 
 import io.iamcore.exception.SdkException;
-
 import java.net.URI;
 
 public class ClientProperties {
@@ -11,28 +10,32 @@ public class ClientProperties {
   private static final String DEFAULT_IAMCORE_URL = "https://cloud.iamcore.io";
 
   private String apiKey;
-  private URI serverURL;
+  private URI serverUrl;
   private final boolean disabled;
 
-  public ClientProperties(String apiKey, String serverURL, boolean disabled) {
+  public ClientProperties(String apiKey, String serverUrl, boolean disabled) {
     if (!disabled) {
       this.apiKey = getApiKey(apiKey);
-      this.serverURL = getServerURL(serverURL);
+      this.serverUrl = getServerUrl(serverUrl);
     }
 
     this.disabled = disabled;
   }
 
-  private static URI getServerURL(String serverURL) {
-    if (StringUtils.isEmpty(serverURL)) {
-      serverURL = System.getenv(IAMCORE_URL_ENV_KEY);
+  private static URI getServerUrl(String serverUrl) {
+    if (StringUtils.isEmpty(serverUrl)) {
+      serverUrl = System.getenv(IAMCORE_URL_ENV_KEY);
     }
 
-    if (StringUtils.isEmpty(serverURL)) {
-      serverURL = DEFAULT_IAMCORE_URL;
+    if (StringUtils.isEmpty(serverUrl)) {
+      serverUrl = DEFAULT_IAMCORE_URL;
     }
 
-    return URI.create(serverURL);
+    return URI.create(serverUrl);
+  }
+
+  public URI getServerUrl() {
+    return serverUrl;
   }
 
   private static String getApiKey(String apiKey) {
@@ -49,10 +52,6 @@ public class ClientProperties {
 
   public String getApiKey() {
     return apiKey;
-  }
-
-  public URI getServerURL() {
-    return serverURL;
   }
 
   public boolean isDisabled() {

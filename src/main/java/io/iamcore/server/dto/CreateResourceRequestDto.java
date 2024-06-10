@@ -1,7 +1,6 @@
 package io.iamcore.server.dto;
 
 import io.iamcore.StringUtils;
-
 import org.json.JSONObject;
 
 public class CreateResourceRequestDto {

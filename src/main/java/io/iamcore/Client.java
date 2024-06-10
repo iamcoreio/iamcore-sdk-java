@@ -2,28 +2,34 @@ package io.iamcore;
 
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.ResourceTypeDto;
-
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Set;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 public interface Client {
 
   void authenticate(HttpServletRequest request);
 
-  Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application, String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
+  Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
+      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
       String action);
 
-  String authorizationDBQueryFilter(HttpHeader authorizationHeader, String action, Database database);
+  String authorizationDbQueryFilter(HttpHeader authorizationHeader, String action,
+      Database database);
 
-  IRN createResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath, String resourceId);
+  IRN createResource(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath, String resourceId);
 
-  void deleteResource(HttpHeader authorizationHeader, String application, String tenantId, String resourceType, String resourcePath, String resourceId);
+  void deleteResource(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath, String resourceId);
 
-  List<ResourceTypeDto> getResourceTypes(HttpHeader authorizationHeader, String accountId, String application);
+  List<ResourceTypeDto> getResourceTypes(HttpHeader authorizationHeader, String accountId,
+      String application);
 
-  void createResourceType(HttpHeader authorizationHeader, String accountId, String application, String type, String description, String actionPrefix, Set<String> operations);
+  void createResourceType(HttpHeader authorizationHeader, String accountId, String application,
+      String type, String description, String actionPrefix, Set<String> operations);
 
-  HttpHeader getApiKeyHeader();
+  HttpHeader getApplicationApiKeyHeader();
+
+  HttpHeader getTenantApiKeyHeader(String accountId, String tenantId);
 }

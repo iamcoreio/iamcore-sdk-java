@@ -1,7 +1,6 @@
 package io.iamcore.authentication.context;
 
 import io.iamcore.exception.SdkException;
-
 import java.util.Optional;
 
 /**

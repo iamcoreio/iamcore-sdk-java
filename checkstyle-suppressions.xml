@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.0//EN"
+    "https://checkstyle.org/dtds/suppressions_1_0.dtd">
+
+<suppressions>
+  <suppress checks="[a-zA-Z0-9]*" files="[\\/]gen[\\/]"/>
+  <suppress checks="VariableDeclarationUsageDistance" files=".*[\\/]src[\\/](test|it)[\\/]"/>
+  <suppress checks="JavadocMethod" files=".*[\\/]src[\\/](test|it)[\\/]"/>
+  <suppress checks="LineLengthCheck" files=".*[\\/]src[\\/](test|it)[\\/]"/>
+  <suppress checks="Javadoc" files="."/>
+</suppressions>

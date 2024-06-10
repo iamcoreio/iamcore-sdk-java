@@ -13,7 +13,7 @@ public class AnonymousAuthenticator {
   }
   
   public SecurityContext authenticate() {
-    IRN principalIRN = serverClient.getPrincipalIRN(null);
-    return new SecurityContext(null, principalIRN);
+    IRN principalIrn = serverClient.getPrincipalIrn(null);
+    return new SecurityContext(null, principalIrn);
   }
 }
