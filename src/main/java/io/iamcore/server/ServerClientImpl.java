@@ -6,7 +6,6 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.iamcore.HttpHeader;
 import io.iamcore.IRN;
 import io.iamcore.StringUtils;
@@ -16,7 +15,6 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.ResourceTypeDto;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -32,7 +30,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 

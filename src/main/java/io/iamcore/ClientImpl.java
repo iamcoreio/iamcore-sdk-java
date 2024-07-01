@@ -23,11 +23,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@FunctionalInterface
-interface TriFunction<T, U, O> {
-  void apply(T t, U u, O o);
-}
-
 public class ClientImpl implements Client {
 
   public static final String AUTHORIZATION_HEADER_NAME = "Authorization";
@@ -81,17 +76,17 @@ public class ClientImpl implements Client {
   }
 
   @Override
-  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
-      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
-    return authorize(authorizationHeader, accountId, application, tenantId,
-        resourceType, resourcePath, resourceIds, action, serverClient::authorizeOnResources);
-  }
-
-  @Override
   public Set<String> authorizeResources(HttpHeader authorizationHeader, String accountId, String application,
       String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
     return authorize(authorizationHeader, accountId, application, tenantId,
         resourceType, resourcePath, resourceIds, action, serverClient::authorizeResources);
+  }
+
+  @Override
+  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
+      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
+    return authorize(authorizationHeader, accountId, application, tenantId,
+        resourceType, resourcePath, resourceIds, action, serverClient::authorizeOnResources);
   }
 
   private Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
