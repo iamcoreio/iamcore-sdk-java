@@ -6,6 +6,7 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.iamcore.HttpHeader;
 import io.iamcore.IRN;
 import io.iamcore.StringUtils;
@@ -15,6 +16,7 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.ResourceTypeDto;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -37,6 +40,7 @@ public class ServerClientImpl implements ServerClient {
 
   private static final String USER_IRN_PATH = "/api/v1/users/me/irn";
   private static final String EVALUATE_ON_RESOURCES_PATH = "/api/v1/evaluate";
+  private static final String RESOURCES_EVALUATE_ON_RESOURCES_PATH = "/api/v1/resources/evaluate";
   private static final String EVALUATE_ON_RESOURCE_TYPE_PATH = "/api/v1/evaluate/resources";
   private static final String AUTHORIZATION_QUERY_FILTER_PATH = "/api/v1/evaluate/database-query-filter";
   private static final String RESOURCE_PATH = "/api/v1/resources";
@@ -72,8 +76,16 @@ public class ServerClientImpl implements ServerClient {
   }
 
   @Override
-  public void authorizeOnResources(HttpHeader principalAuthorizationHeader, String action,
-      List<IRN> resources) {
+  public void authorizeOnResources(HttpHeader authorizationHeader, String action, List<IRN> resources) {
+    authorize(EVALUATE_ON_RESOURCES_PATH, authorizationHeader, action, resources);
+  }
+
+  @Override
+  public void authorizeResources(HttpHeader authorizationHeader, String action, List<IRN> resources) {
+    authorize(RESOURCES_EVALUATE_ON_RESOURCES_PATH, authorizationHeader, action, resources);
+  }
+
+  private void authorize(String url, HttpHeader authorizationHeader, String action, List<IRN> resources) {
     List<String> resourceIrns = resources.stream()
         .map(IRN::toString)
         .collect(Collectors.toList());
@@ -83,8 +95,7 @@ public class ServerClientImpl implements ServerClient {
     requestBody.put("resources", resourceIrns);
 
     try {
-      HttpURLConnection connection = sendRequest(EVALUATE_ON_RESOURCES_PATH, "POST",
-          principalAuthorizationHeader, requestBody);
+      HttpURLConnection connection = sendRequest(url, "POST", authorizationHeader, requestBody);
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_OK) {

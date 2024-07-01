@@ -15,6 +15,8 @@ public interface ServerClient {
 
   void authorizeOnResources(HttpHeader authorizationHeader, String action, List<IRN> resources);
 
+  void authorizeResources(HttpHeader principalAuthorizationHeader, String action, List<IRN> resources);
+
   List<IRN> authorizedOnResourceType(HttpHeader header, String action, String application,
       String tenantId, String resourceType);
 

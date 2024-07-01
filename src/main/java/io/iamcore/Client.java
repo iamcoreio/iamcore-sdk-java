@@ -14,6 +14,10 @@ public interface Client {
       String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
       String action);
 
+  Set<String> authorizeResources(HttpHeader authorizationHeader, String accountId, String application,
+      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
+      String action);
+
   String authorizationDbQueryFilter(HttpHeader authorizationHeader, String action,
       Database database);
 
