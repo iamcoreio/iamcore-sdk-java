@@ -10,7 +10,11 @@ public interface Client {
 
   void authenticate(HttpServletRequest request);
 
-  Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
+  Set<String> authorizeIrns(HttpHeader authorizationHeader, String accountId, String application,
+      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
+      String action);
+
+  Set<String> authorizeResources(HttpHeader authorizationHeader, String accountId, String application,
       String tenantId, String resourceType, String resourcePath, Set<String> resourceIds,
       String action);
 

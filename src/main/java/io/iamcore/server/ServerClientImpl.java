@@ -36,8 +36,9 @@ import org.json.JSONObject;
 public class ServerClientImpl implements ServerClient {
 
   private static final String USER_IRN_PATH = "/api/v1/users/me/irn";
-  private static final String EVALUATE_ON_RESOURCES_PATH = "/api/v1/evaluate";
-  private static final String EVALUATE_ON_RESOURCE_TYPE_PATH = "/api/v1/evaluate/resources";
+  private static final String EVALUATE_PATH = "/api/v1/evaluate";
+  private static final String RESOURCES_EVALUATE_PATH = "/api/v1/resources/evaluate";
+  private static final String EVALUATE_RESOURCES_PATH = "/api/v1/evaluate/resources";
   private static final String AUTHORIZATION_QUERY_FILTER_PATH = "/api/v1/evaluate/database-query-filter";
   private static final String RESOURCE_PATH = "/api/v1/resources";
   private static final String APPLICATION_PATH = "/api/v1/applications";
@@ -72,8 +73,16 @@ public class ServerClientImpl implements ServerClient {
   }
 
   @Override
-  public void authorizeOnResources(HttpHeader principalAuthorizationHeader, String action,
-      List<IRN> resources) {
+  public void authorizedOnIrns(HttpHeader authorizationHeader, String action, List<IRN> irns) {
+    authorize(EVALUATE_PATH, authorizationHeader, action, irns);
+  }
+
+  @Override
+  public void authorizedOnResources(HttpHeader authorizationHeader, String action, List<IRN> resources) {
+    authorize(RESOURCES_EVALUATE_PATH, authorizationHeader, action, resources);
+  }
+
+  private void authorize(String url, HttpHeader authorizationHeader, String action, List<IRN> resources) {
     List<String> resourceIrns = resources.stream()
         .map(IRN::toString)
         .collect(Collectors.toList());
@@ -83,8 +92,7 @@ public class ServerClientImpl implements ServerClient {
     requestBody.put("resources", resourceIrns);
 
     try {
-      HttpURLConnection connection = sendRequest(EVALUATE_ON_RESOURCES_PATH, "POST",
-          principalAuthorizationHeader, requestBody);
+      HttpURLConnection connection = sendRequest(url, "POST", authorizationHeader, requestBody);
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_OK) {
@@ -108,7 +116,7 @@ public class ServerClientImpl implements ServerClient {
       requestBody.put("tenantID", tenantId);
     }
 
-    String path = String.format("%s?pageSize=%s", EVALUATE_ON_RESOURCE_TYPE_PATH, PAGE_SIZE);
+    String path = String.format("%s?pageSize=%s", EVALUATE_RESOURCES_PATH, PAGE_SIZE);
 
     try {
       HttpURLConnection connection = sendRequest(path, "POST", header, requestBody);
