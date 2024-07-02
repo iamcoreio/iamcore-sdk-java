@@ -18,7 +18,6 @@ import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.ResourceTypeDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,14 +78,14 @@ public class ClientImpl implements Client {
   public Set<String> authorizeResources(HttpHeader authorizationHeader, String accountId, String application,
       String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
     return authorize(authorizationHeader, accountId, application, tenantId,
-        resourceType, resourcePath, resourceIds, action, serverClient::authorizeResources);
+        resourceType, resourcePath, resourceIds, action, serverClient::authorizedOnResources);
   }
 
   @Override
-  public Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
+  public Set<String> authorizeIrns(HttpHeader authorizationHeader, String accountId, String application,
       String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
     return authorize(authorizationHeader, accountId, application, tenantId,
-        resourceType, resourcePath, resourceIds, action, serverClient::authorizeOnResources);
+        resourceType, resourcePath, resourceIds, action, serverClient::authorizedOnIrns);
   }
 
   private Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
@@ -100,10 +99,10 @@ public class ClientImpl implements Client {
       throw new SdkException("Action must be defined");
     }
 
-    if (Objects.nonNull(resourceIds) && !resourceIds.isEmpty()) {
+    if (resourceIds != null && !resourceIds.isEmpty()) {
       List<IRN> resourceIrns = resourceIds.stream()
-          .map(resourceID -> IRN.of(accountId, application, tenantId, null, resourceType,
-              resourcePath, resourceID))
+          .map(resourceId -> IRN.of(accountId, application, tenantId, null, resourceType,
+              resourcePath, resourceId))
           .collect(Collectors.toList());
 
       authorizationFunction.apply(authorizationHeader, action, resourceIrns);
