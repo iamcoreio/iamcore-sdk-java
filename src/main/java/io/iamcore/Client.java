@@ -30,6 +30,9 @@ public interface Client {
   List<ResourceTypeDto> getResourceTypes(HttpHeader authorizationHeader, String accountId,
       String application);
 
+  void deleteResources(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath, Set<String> resourceIds);
+
   void createResourceType(HttpHeader authorizationHeader, String accountId, String application,
       String type, String description, String actionPrefix, Set<String> operations);
 

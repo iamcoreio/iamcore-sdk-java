@@ -5,6 +5,7 @@ import io.iamcore.IRN;
 import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
+import io.iamcore.server.dto.DeleteResourcesRequestDto;
 import io.iamcore.server.dto.ResourceTypeDto;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,8 @@ public interface ServerClient {
   IRN createResource(HttpHeader header, CreateResourceRequestDto requestDto);
 
   void deleteResource(HttpHeader header, IRN resourceIrn);
+
+  void deleteResources(HttpHeader header, DeleteResourcesRequestDto requestDto);
 
   void createResourceType(HttpHeader header, IRN application, CreateResourceTypeRequestDto requestDto);
 

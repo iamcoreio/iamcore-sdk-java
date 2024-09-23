@@ -14,6 +14,7 @@ import io.iamcore.exception.SdkException;
 import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
+import io.iamcore.server.dto.DeleteResourcesRequestDto;
 import io.iamcore.server.dto.ResourceTypeDto;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -78,11 +79,13 @@ public class ServerClientImpl implements ServerClient {
   }
 
   @Override
-  public void authorizedOnResources(HttpHeader authorizationHeader, String action, List<IRN> resources) {
+  public void authorizedOnResources(HttpHeader authorizationHeader, String action,
+      List<IRN> resources) {
     authorize(RESOURCES_EVALUATE_PATH, authorizationHeader, action, resources);
   }
 
-  private void authorize(String url, HttpHeader authorizationHeader, String action, List<IRN> resources) {
+  private void authorize(String url, HttpHeader authorizationHeader, String action,
+      List<IRN> resources) {
     List<String> resourceIrns = resources.stream()
         .map(IRN::toString)
         .collect(Collectors.toList());
@@ -191,6 +194,22 @@ public class ServerClientImpl implements ServerClient {
     try {
       HttpURLConnection connection = sendRequest(RESOURCE_PATH + "/" + resourceIrn.toBase64(),
           "DELETE", header, null);
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode != HttpURLConnection.HTTP_NO_CONTENT) {
+        JSONObject response = convertErrorStream(connection);
+        throw new IamcoreServerException(response.getString("message"), responseCode);
+      }
+    } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  @Override
+  public void deleteResources(HttpHeader header, DeleteResourcesRequestDto requestDto) {
+    try {
+      HttpURLConnection connection = sendRequest(RESOURCE_PATH, "DELETE", header,
+          requestDto.toJson());
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HttpURLConnection.HTTP_NO_CONTENT) {
