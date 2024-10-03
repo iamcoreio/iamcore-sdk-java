@@ -326,7 +326,7 @@ public class ServerClientImpl implements ServerClient {
       connection.setRequestProperty(header.getName(), header.getValue());
     }
 
-    if (Arrays.asList("POST", "PUT", "OPTIONS").contains(method)) {
+    if (Arrays.asList("POST", "PUT", "OPTIONS", "DELETE").contains(method)) {
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");
     }
