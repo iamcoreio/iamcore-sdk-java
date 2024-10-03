@@ -208,7 +208,7 @@ public class ServerClientImpl implements ServerClient {
   @Override
   public void deleteResources(HttpHeader header, DeleteResourcesRequestDto requestDto) {
     try {
-      HttpURLConnection connection = sendRequest(RESOURCE_PATH, "DELETE", header,
+      HttpURLConnection connection = sendRequest(RESOURCE_PATH, "POST", header,
           requestDto.toJson());
       int responseCode = connection.getResponseCode();
 
@@ -326,7 +326,7 @@ public class ServerClientImpl implements ServerClient {
       connection.setRequestProperty(header.getName(), header.getValue());
     }
 
-    if (Arrays.asList("POST", "PUT", "OPTIONS", "DELETE").contains(method)) {
+    if (Arrays.asList("POST", "PUT", "OPTIONS").contains(method)) {
       connection.setDoOutput(true);
       connection.setRequestProperty("Content-Type", "application/json");
     }
