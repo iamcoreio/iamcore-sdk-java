@@ -76,22 +76,33 @@ public class ClientImpl implements Client {
   }
 
   @Override
-  public Set<String> authorizeResources(HttpHeader authorizationHeader, String accountId, String application,
-      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
-    return authorize(authorizationHeader, accountId, application, tenantId,
-        resourceType, resourcePath, resourceIds, action, serverClient::authorizedOnResources);
+  public Set<String> authorizeResources(HttpHeader authorizationHeader, String accountId,
+      String application, String tenantId, String resourceType, String resourcePath,
+      Set<String> resourceIds, String action) {
+    return authorize(authorizationHeader, accountId, application, tenantId, resourceType,
+        resourcePath, resourceIds, action,
+        resourceIrns -> serverClient.authorizedOnResources(authorizationHeader, action,
+            resourceIrns)).stream()
+        .map(IRN::getResourceId)
+        .collect(Collectors.toSet());
   }
 
   @Override
-  public Set<String> authorizeIrns(HttpHeader authorizationHeader, String accountId, String application,
-      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action) {
+  public Set<String> authorizeIrns(HttpHeader authorizationHeader, String accountId,
+      String application, String tenantId, String resourceType, String resourcePath,
+      Set<String> resourceIds, String action) {
     return authorize(authorizationHeader, accountId, application, tenantId,
-        resourceType, resourcePath, resourceIds, action, serverClient::authorizedOnIrns);
+        resourceType, resourcePath, resourceIds, action, resourceIrns -> {
+          serverClient.authorizedOnIrns(authorizationHeader, action, resourceIrns);
+          return resourceIrns;
+        }).stream()
+        .map(IRN::getResourceId)
+        .collect(Collectors.toSet());
   }
 
-  private Set<String> authorize(HttpHeader authorizationHeader, String accountId, String application,
-      String tenantId, String resourceType, String resourcePath, Set<String> resourceIds, String action,
-      TriFunction<HttpHeader, String, List<IRN>> authorizationFunction) {
+  private List<IRN> authorize(HttpHeader authorizationHeader, String accountId,
+      String application, String tenantId, String resourceType, String resourcePath,
+      Set<String> resourceIds, String action, Authorizer authorizer) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
@@ -106,15 +117,11 @@ public class ClientImpl implements Client {
               resourcePath, resourceId))
           .collect(Collectors.toList());
 
-      authorizationFunction.apply(authorizationHeader, action, resourceIrns);
-
-      return resourceIds;
+      return authorizer.authorize(resourceIrns);
     }
 
     return serverClient.authorizedOnResourceType(authorizationHeader, action, application, tenantId,
-            resourceType).stream()
-        .map(IRN::getResourceId)
-        .collect(Collectors.toSet());
+        resourceType);
   }
 
   @Override
