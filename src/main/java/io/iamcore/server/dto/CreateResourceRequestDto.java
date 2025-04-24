@@ -1,6 +1,7 @@
 package io.iamcore.server.dto;
 
 import io.iamcore.StringUtils;
+import java.util.Set;
 import org.json.JSONObject;
 
 public class CreateResourceRequestDto {
@@ -10,6 +11,7 @@ public class CreateResourceRequestDto {
   private final String path;
   private final String name;
   private final Boolean enabled;
+  private final Set<String> poolIds;
 
   public CreateResourceRequestDto(
       String application,
@@ -17,13 +19,15 @@ public class CreateResourceRequestDto {
       String resourceType,
       String path,
       String name,
-      Boolean enabled) {
+      Boolean enabled,
+      Set<String> poolIds) {
     this.application = application;
     this.tenantId = tenantId;
     this.resourceType = resourceType;
     this.path = StringUtils.isEmpty(path) ? "/" : path;
     this.name = name;
     this.enabled = enabled;
+    this.poolIds = poolIds;
   }
 
   public JSONObject toJson() {
@@ -34,6 +38,7 @@ public class CreateResourceRequestDto {
     json.put("enabled", enabled);
     json.put("tenantID", tenantId);
     json.put("application", application);
+    json.put("poolIDs", poolIds);
 
     return json;
   }

@@ -144,13 +144,13 @@ public class ClientImpl implements Client {
 
   @Override
   public IRN createResource(HttpHeader authorizationHeader, String application, String tenantId,
-      String resourceType, String resourcePath, String resourceId) {
+      String resourceType, String resourcePath, String resourceId, Set<String> poolIds) {
     if (disabled) {
       throw new SdkException("Iamcore disabled");
     }
 
     CreateResourceRequestDto requestDto = new CreateResourceRequestDto(application, tenantId,
-        resourceType, resourcePath, resourceId, true);
+        resourceType, resourcePath, resourceId, true, poolIds);
     return serverClient.createResource(authorizationHeader, requestDto);
   }
 
