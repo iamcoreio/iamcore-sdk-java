@@ -38,7 +38,10 @@ public class CreateResourceRequestDto {
     json.put("enabled", enabled);
     json.put("tenantID", tenantId);
     json.put("application", application);
-    json.put("poolIDs", poolIds);
+
+    if (poolIds != null && !poolIds.isEmpty()) {
+      json.put("poolIDs", poolIds);
+    }
 
     return json;
   }
