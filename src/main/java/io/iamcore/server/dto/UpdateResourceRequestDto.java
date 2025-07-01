@@ -7,14 +7,14 @@ public class UpdateResourceRequestDto {
 
   private final Set<String> poolIds;
 
-  public UpdateResourceRequestDto(Set<String> poolIDs) {
-    this.poolIds = poolIDs;
+  public UpdateResourceRequestDto(Set<String> poolIds) {
+    this.poolIds = poolIds;
   }
 
   public JSONObject toJson() {
     JSONObject json = new JSONObject();
     if (this.poolIds != null) {
-      json.put("poolIDs", poolIds);
+      json.put("poolIds", poolIds);
     }
 
     return json;
