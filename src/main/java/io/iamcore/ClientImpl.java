@@ -17,6 +17,7 @@ import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
 import io.iamcore.server.dto.ResourceTypeDto;
+import io.iamcore.server.dto.UpdateResourceRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
@@ -158,6 +159,25 @@ public class ClientImpl implements Client {
     CreateResourceRequestDto requestDto = new CreateResourceRequestDto(application, tenantId,
         resourceType, resourcePath, resourceId, true, poolIds);
     return serverClient.createResource(authorizationHeader, requestDto);
+  }
+
+  @Override
+  public void updateResource(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath, String resourceId, Set<String> poolIds) {
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
+    }
+
+    if (poolIds == null) {
+      return;
+    }
+
+    IRN principalIrn = serverClient.getPrincipalIrn(authorizationHeader);
+    IRN resourceIrn = IRN.of(principalIrn.getAccountId(), application, tenantId, null, resourceType,
+        resourcePath, resourceId);
+
+    UpdateResourceRequestDto requestDto = new UpdateResourceRequestDto(poolIds);
+    serverClient.updateResource(authorizationHeader, resourceIrn, requestDto);
   }
 
   @Override

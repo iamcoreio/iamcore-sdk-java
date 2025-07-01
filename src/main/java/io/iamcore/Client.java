@@ -27,6 +27,9 @@ public interface Client {
   IRN createResource(HttpHeader authorizationHeader, String application, String tenantId,
       String resourceType, String resourcePath, String resourceId, Set<String> poolIds);
 
+  void updateResource(HttpHeader authorizationHeader, String application, String tenantId,
+      String resourceType, String resourcePath, String resourceId, Set<String> poolIds);
+
   void deleteResource(HttpHeader authorizationHeader, String application, String tenantId,
       String resourceType, String resourcePath, String resourceId);
 
