@@ -17,6 +17,7 @@ import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
 import io.iamcore.server.dto.ResourceTypeDto;
+import io.iamcore.server.dto.UpdateResourceRequestDto;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -208,6 +209,27 @@ public class ServerClientImpl implements ServerClient {
 
       JSONObject response = convertErrorStreamToJsonObject(connection);
       throw new IamcoreServerException(response.getString("message"), responseCode);
+    } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  @Override
+  public void updateResource(HttpHeader header, IRN resourceIrn,
+      UpdateResourceRequestDto updateDto) {
+    try {
+      HttpURLConnection connection = sendRequest(
+          RESOURCE_PATH + "/" + resourceIrn.toBase64(),
+          "PATCH",
+          header,
+          updateDto.toJson()
+      );
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode != HTTP_NO_CONTENT) {
+        JSONObject response = convertInputStreamToJsonObject(connection);
+        throw new IamcoreServerException(response.getString("message"), responseCode);
+      }
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
     }

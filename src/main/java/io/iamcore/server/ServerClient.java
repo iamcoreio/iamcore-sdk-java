@@ -7,6 +7,7 @@ import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
 import io.iamcore.server.dto.ResourceTypeDto;
+import io.iamcore.server.dto.UpdateResourceRequestDto;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,8 @@ public interface ServerClient {
   String authorizationDbQueryFilter(HttpHeader header, String action, Database database);
 
   IRN createResource(HttpHeader header, CreateResourceRequestDto requestDto);
+
+  void updateResource(HttpHeader header, IRN resourceIrn, UpdateResourceRequestDto requestDto);
 
   void deleteResource(HttpHeader header, IRN resourceIrn);
 
