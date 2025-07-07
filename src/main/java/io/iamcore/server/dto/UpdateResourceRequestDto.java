@@ -14,9 +14,10 @@ public class UpdateResourceRequestDto {
   public JSONObject toJson() {
     JSONObject json = new JSONObject();
     if (this.poolIds != null) {
-      json.put("poolIds", poolIds);
+      json.put("poolIDs", poolIds);
     }
 
     return json;
   }
 }
+
