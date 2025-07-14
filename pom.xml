@@ -12,7 +12,7 @@
     <properties>
         <java.version>1.8</java.version>
         <jakarta.servlet-api>6.0.0</jakarta.servlet-api>
-        <iamcore-irn.version>0.0.3</iamcore-irn.version>
+        <iamcore-irn.version>0.0.4</iamcore-irn.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <checkstyle-maven-plugin.version>3.3.1</checkstyle-maven-plugin.version>
         <om.puppycrawl.tools.version>8.44</om.puppycrawl.tools.version>
