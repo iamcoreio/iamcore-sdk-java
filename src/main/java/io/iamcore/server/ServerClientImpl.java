@@ -16,6 +16,8 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
+import io.iamcore.server.dto.PoolInfo;
+import io.iamcore.server.dto.PoolsQueryFilter;
 import io.iamcore.server.dto.ResourceTypeDto;
 import io.iamcore.server.dto.UpdateResourceRequestDto;
 import java.io.BufferedReader;
@@ -30,7 +32,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.json.JSONArray;
@@ -47,6 +51,7 @@ public class ServerClientImpl implements ServerClient {
   private static final String APPLICATION_PATH = "/api/v1/applications";
   private static final String RESOURCE_TYPE_PATH = APPLICATION_PATH + "/%s/resource-types";
   private static final String API_KEY_PATH = "/api/v1/principals/%s/api-keys";
+  private static final String POOLS_PATH = "/api/v1/pools";
   private static final int PAGE_SIZE = 100000;
 
   private final URI serverUrl;
@@ -64,11 +69,11 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode == HTTP_OK) {
-        JSONObject response = convertInputStreamToJsonObject(connection);
+        JSONObject response = readInputStreamToJsonObject(connection);
         return IRN.from(response.getString("data"));
       }
 
-      JSONObject response = convertErrorStreamToJsonObject(connection);
+      JSONObject response = readErrorStreamToJsonObject(connection);
       throw new IamcoreServerException(response.getString("message"), responseCode);
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
@@ -91,7 +96,7 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_OK) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
     } catch (IOException ex) {
@@ -111,15 +116,16 @@ public class ServerClientImpl implements ServerClient {
     requestBody.put("resources", resourceIrns);
 
     try {
-      HttpURLConnection connection = sendRequest(RESOURCES_EVALUATE_PATH, "POST", authorizationHeader, requestBody);
+      HttpURLConnection connection = sendRequest(RESOURCES_EVALUATE_PATH, "POST",
+          authorizationHeader, requestBody);
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_OK) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
 
-      JSONArray response = convertInputStreamToJsonArray(connection);
+      JSONArray response = readInputStreamToJsonArray(connection);
 
       List<IRN> authorizedResourceIrns = new ArrayList<>();
       for (int i = 0; i < response.length(); i++) {
@@ -151,7 +157,7 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode == HTTP_OK) {
-        JSONObject response = convertInputStreamToJsonObject(connection);
+        JSONObject response = readInputStreamToJsonObject(connection);
 
         return Optional.ofNullable(response.getJSONArray("data"))
             .map(resources -> {
@@ -164,7 +170,7 @@ public class ServerClientImpl implements ServerClient {
             }).orElseGet(ArrayList::new);
       }
 
-      JSONObject response = convertErrorStreamToJsonObject(connection);
+      JSONObject response = readErrorStreamToJsonObject(connection);
       throw new IamcoreServerException(response.getString("message"), responseCode);
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
@@ -184,11 +190,11 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode == HTTP_OK) {
-        JSONObject response = convertInputStreamToJsonObject(connection);
+        JSONObject response = readInputStreamToJsonObject(connection);
         return response.getString("data");
       }
 
-      JSONObject response = convertErrorStreamToJsonObject(connection);
+      JSONObject response = readErrorStreamToJsonObject(connection);
       throw new IamcoreServerException(response.getString("message"), responseCode);
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
@@ -203,11 +209,11 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode == HTTP_CREATED) {
-        JSONObject response = convertInputStreamToJsonObject(connection);
+        JSONObject response = readInputStreamToJsonObject(connection);
         return IRN.from(response.getJSONObject("data").getString("irn"));
       }
 
-      JSONObject response = convertErrorStreamToJsonObject(connection);
+      JSONObject response = readErrorStreamToJsonObject(connection);
       throw new IamcoreServerException(response.getString("message"), responseCode);
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
@@ -218,16 +224,12 @@ public class ServerClientImpl implements ServerClient {
   public void updateResource(HttpHeader header, IRN resourceIrn,
       UpdateResourceRequestDto updateDto) {
     try {
-      HttpURLConnection connection = sendRequest(
-          RESOURCE_PATH + "/" + resourceIrn.toBase64(),
-          "PATCH",
-          header,
-          updateDto.toJson()
-      );
+      HttpURLConnection connection = sendRequest(RESOURCE_PATH + "/" + resourceIrn.toBase64(),
+          "PATCH", header, updateDto.toJson());
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_NO_CONTENT) {
-        JSONObject response = convertInputStreamToJsonObject(connection);
+        JSONObject response = readInputStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
     } catch (IOException ex) {
@@ -243,7 +245,7 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_NO_CONTENT) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
     } catch (IOException ex) {
@@ -259,7 +261,7 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_NO_CONTENT) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
     } catch (IOException ex) {
@@ -277,7 +279,7 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_CREATED) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
     } catch (IOException ex) {
@@ -295,22 +297,15 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (responseCode != HTTP_OK) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
 
-      JSONObject response = convertInputStreamToJsonObject(connection);
+      JSONObject response = readInputStreamToJsonObject(connection);
 
       return Optional.ofNullable(response.get("data"))
-          .map(resourceTypes -> {
-            try {
-              return objectMapper.readValue(resourceTypes.toString(),
-                  new TypeReference<List<ResourceTypeDto>>() {
-                  });
-            } catch (JsonProcessingException ex) {
-              throw new SdkException(ex.getMessage());
-            }
-          })
+          .map(Object::toString)
+          .map(this::<List<ResourceTypeDto>>unmarshallJson)
           .orElse(Collections.emptyList());
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
@@ -326,11 +321,11 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (connection.getResponseCode() != HTTP_OK) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
 
-      JSONObject response = convertInputStreamToJsonObject(connection);
+      JSONObject response = readInputStreamToJsonObject(connection);
       JSONArray apiKey = response.getJSONArray("data");
 
       if (apiKey.length() != 1) {
@@ -351,13 +346,59 @@ public class ServerClientImpl implements ServerClient {
       int responseCode = connection.getResponseCode();
 
       if (connection.getResponseCode() != HTTP_CREATED) {
-        JSONObject response = convertErrorStreamToJsonObject(connection);
+        JSONObject response = readErrorStreamToJsonObject(connection);
         throw new IamcoreServerException(response.getString("message"), responseCode);
       }
 
       String location = connection.getHeaderField("Location");
       return location.substring(location.lastIndexOf('/') + 1);
     } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  @Override
+  public List<PoolInfo> getPools(HttpHeader header, PoolsQueryFilter filter) {
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("pageSize", String.valueOf(PAGE_SIZE));
+    queryParams.put("irn", filter.getIrn());
+    queryParams.put("name", filter.getName());
+    queryParams.put("resourceIRN", filter.getResourceIrn());
+
+    String rawQuery = buildRawQuery(queryParams);
+    String path = POOLS_PATH + "?" + rawQuery;
+
+    try {
+      HttpURLConnection connection = sendRequest(path, "GET", header, null);
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode != HTTP_OK) {
+        JSONObject response = readErrorStreamToJsonObject(connection);
+        throw new IamcoreServerException(response.getString("message"), responseCode);
+      }
+
+      JSONObject response = readInputStreamToJsonObject(connection);
+
+      return Optional.ofNullable(response.get("data"))
+          .map(Object::toString)
+          .map(this::<List<PoolInfo>>unmarshallJson)
+          .orElse(Collections.emptyList());
+    } catch (IOException ex) {
+      throw new SdkException(ex.getMessage());
+    }
+  }
+
+  private String buildRawQuery(Map<String, String> queryParams) {
+    return queryParams.entrySet().stream()
+        .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
+        .map(entry -> entry.getKey() + "=" + entry.getValue())
+        .collect(Collectors.joining("&"));
+  }
+
+  private <T> T unmarshallJson(String jsonString) {
+    try {
+      return objectMapper.readValue(jsonString, new TypeReference<T>(){});
+    } catch (JsonProcessingException ex) {
       throw new SdkException(ex.getMessage());
     }
   }
@@ -391,9 +432,30 @@ public class ServerClientImpl implements ServerClient {
     return this.serverUrl.resolve(path).toURL();
   }
 
-  private static String convertInputStreamToString(InputStream inputStream) {
-    try {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+  private static JSONArray readInputStreamToJsonArray(HttpURLConnection connection)
+      throws IOException {
+    try (InputStream inputStream = connection.getInputStream()) {
+      return new JSONArray(readInputStreamToString(inputStream));
+    }
+  }
+
+  private static JSONObject readInputStreamToJsonObject(HttpURLConnection connection)
+      throws IOException {
+    try (InputStream inputStream = connection.getInputStream()) {
+      return new JSONObject(readInputStreamToString(inputStream));
+    }
+  }
+
+  private static JSONObject readErrorStreamToJsonObject(HttpURLConnection connection)
+      throws IOException {
+    try (InputStream inputStream = connection.getErrorStream()) {
+      return new JSONObject(readInputStreamToString(inputStream));
+    }
+  }
+
+  private static String readInputStreamToString(InputStream inputStream) {
+    try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        BufferedReader reader = new BufferedReader(inputStreamReader)) {
       StringBuilder stringBuilder = new StringBuilder();
       String line;
 
@@ -401,33 +463,9 @@ public class ServerClientImpl implements ServerClient {
         stringBuilder.append(line);
       }
 
-      reader.close();
-      inputStream.close();
-
       return stringBuilder.toString();
     } catch (IOException ex) {
       throw new SdkException(ex.getMessage());
-    }
-  }
-
-  private static JSONArray convertInputStreamToJsonArray(HttpURLConnection connection)
-      throws IOException {
-    try (InputStream inputStream = connection.getInputStream()) {
-      return new JSONArray(convertInputStreamToString(inputStream));
-    }
-  }
-
-  private static JSONObject convertInputStreamToJsonObject(HttpURLConnection connection)
-      throws IOException {
-    try (InputStream inputStream = connection.getInputStream()) {
-      return new JSONObject(convertInputStreamToString(inputStream));
-    }
-  }
-
-  private static JSONObject convertErrorStreamToJsonObject(HttpURLConnection connection)
-      throws IOException {
-    try (InputStream inputStream = connection.getErrorStream()) {
-      return new JSONObject(convertInputStreamToString(inputStream));
     }
   }
 }

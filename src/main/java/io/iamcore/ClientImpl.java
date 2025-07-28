@@ -16,6 +16,8 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
+import io.iamcore.server.dto.PoolInfo;
+import io.iamcore.server.dto.PoolsQueryFilter;
 import io.iamcore.server.dto.ResourceTypeDto;
 import io.iamcore.server.dto.UpdateResourceRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -255,5 +257,16 @@ public class ClientImpl implements Client {
         .orElseGet(() -> serverClient.createPrincipalApiKey(apiKeyHeader, tenantIrn));
 
     return new HttpHeader(API_KEY_HEADER_NAME, apiKey);
+  }
+
+  @Override
+  public Set<String> getPoolIds(HttpHeader authorizationHeader, PoolsQueryFilter filter) {
+    if (disabled) {
+      throw new SdkException("Iamcore disabled");
+    }
+
+    return serverClient.getPools(authorizationHeader, filter).stream()
+        .map(PoolInfo::getId)
+        .collect(Collectors.toSet());
   }
 }
