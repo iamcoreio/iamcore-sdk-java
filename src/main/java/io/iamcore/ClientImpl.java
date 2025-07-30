@@ -266,7 +266,7 @@ public class ClientImpl implements Client {
     }
 
     return serverClient.getPools(authorizationHeader, filter).stream()
-        .map(PoolInfo::getId)
+        .map(PoolInfo::id)
         .collect(Collectors.toSet());
   }
 }

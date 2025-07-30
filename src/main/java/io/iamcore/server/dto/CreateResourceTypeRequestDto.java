@@ -23,6 +23,22 @@ public class CreateResourceTypeRequestDto {
     this.operations = operations;
   }
 
+  public String getType() {
+    return type;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public String getActionPrefix() {
+    return actionPrefix;
+  }
+
+  public Set<String> getOperations() {
+    return operations;
+  }
+
   public JSONObject toJson() {
     JSONObject json = new JSONObject();
     json.put("type", type);

@@ -1,34 +1,19 @@
 package io.iamcore.server.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.iamcore.IRN;
+import io.iamcore.StringUtils;
 import java.util.List;
 
-public class PoolInfo {
+public record PoolInfo(String id, IRN irn, String name, List<String> resources) {
 
-  private final String id;
-  private final String irn;
-  private final String name;
-  private final List<String> resources;
-
-  public PoolInfo(String id, String irn, String name, List<String> resources) {
-    this.id = id;
-    this.irn = irn;
-    this.name = name;
-    this.resources = resources;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public String getIrn() {
-    return irn;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public List<String> getResources() {
-    return resources;
+  @JsonCreator
+  public PoolInfo(
+      @JsonProperty("id") String id,
+      @JsonProperty("irn") String irn,
+      @JsonProperty("name") String name,
+      @JsonProperty("resources") List<String> resources) {
+    this(id, StringUtils.isEmpty(irn) ? null : IRN.from(irn), name, resources);
   }
 }

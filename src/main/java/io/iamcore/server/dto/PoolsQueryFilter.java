@@ -1,26 +1,5 @@
 package io.iamcore.server.dto;
 
-public class PoolsQueryFilter {
+import io.iamcore.IRN;
 
-  private final String irn;
-  private final String name;
-  private final String resourceIrn;
-
-  public PoolsQueryFilter(String irn, String name, String resourceIrn) {
-    this.irn = irn;
-    this.name = name;
-    this.resourceIrn = resourceIrn;
-  }
-
-  public String getIrn() {
-    return irn;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getResourceIrn() {
-    return resourceIrn;
-  }
-}
+public record PoolsQueryFilter(IRN irn, String name, IRN resourceIrn) {}

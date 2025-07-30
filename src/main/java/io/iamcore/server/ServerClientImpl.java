@@ -1,10 +1,5 @@
 package io.iamcore.server;
 
-import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.net.HttpURLConnection.HTTP_NO_CONTENT;
-import static java.net.HttpURLConnection.HTTP_OK;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.iamcore.HttpHeader;
@@ -12,380 +7,216 @@ import io.iamcore.IRN;
 import io.iamcore.StringUtils;
 import io.iamcore.exception.IamcoreServerException;
 import io.iamcore.exception.SdkException;
+import io.iamcore.server.dto.ApiKeyResponse;
+import io.iamcore.server.dto.AuthorizationDbQueryFilterRequest;
 import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
+import io.iamcore.server.dto.DataResponse;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
+import io.iamcore.server.dto.EvaluateResourceTypeRequest;
+import io.iamcore.server.dto.EvaluateResourcesRequest;
+import io.iamcore.server.dto.PageableResponse;
 import io.iamcore.server.dto.PoolInfo;
 import io.iamcore.server.dto.PoolsQueryFilter;
+import io.iamcore.server.dto.ResourceResponse;
 import io.iamcore.server.dto.ResourceTypeDto;
 import io.iamcore.server.dto.UpdateResourceRequestDto;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class ServerClientImpl implements ServerClient {
 
-  private static final String USER_IRN_PATH = "/api/v1/users/me/irn";
-  private static final String EVALUATE_PATH = "/api/v1/evaluate";
-  private static final String RESOURCES_EVALUATE_PATH = "/api/v1/resources/evaluate?filterResources=true";
-  private static final String EVALUATE_RESOURCES_PATH = "/api/v1/evaluate/resources";
-  private static final String AUTHORIZATION_QUERY_FILTER_PATH = "/api/v1/evaluate/database-query-filter";
-  private static final String RESOURCE_PATH = "/api/v1/resources";
-  private static final String APPLICATION_PATH = "/api/v1/applications";
-  private static final String RESOURCE_TYPE_PATH = APPLICATION_PATH + "/%s/resource-types";
-  private static final String API_KEY_PATH = "/api/v1/principals/%s/api-keys";
-  private static final String POOLS_PATH = "/api/v1/pools";
+  public static final String USER_IRN_PATH = "/api/v1/users/me/irn";
+  public static final String EVALUATE_PATH = "/api/v1/evaluate";
+  public static final String RESOURCES_EVALUATE_PATH =
+      "/api/v1/resources/evaluate?filterResources=true";
+  public static final String EVALUATE_RESOURCES_PATH = "/api/v1/evaluate/resources";
+  public static final String AUTHORIZATION_QUERY_FILTER_PATH =
+      "/api/v1/evaluate/database-query-filter";
+  public static final String RESOURCE_PATH = "/api/v1/resources";
+  public static final String APPLICATION_PATH = "/api/v1/applications";
+  public static final String RESOURCE_TYPE_PATH = APPLICATION_PATH + "/%s/resource-types";
+  public static final String API_KEY_PATH = "/api/v1/principals/%s/api-keys";
+  public static final String POOLS_PATH = "/api/v1/pools";
   private static final int PAGE_SIZE = 100000;
 
   private final URI serverUrl;
   private final ObjectMapper objectMapper;
+  private final HttpClient httpClient;
 
   public ServerClientImpl(URI serverUrl, ObjectMapper objectMapper) {
     this.serverUrl = serverUrl;
     this.objectMapper = objectMapper;
+    this.httpClient = HttpClient.newHttpClient();
   }
 
   @Override
   public IRN getPrincipalIrn(HttpHeader header) {
-    try {
-      HttpURLConnection connection = sendRequest(USER_IRN_PATH, "GET", header, null);
-      int responseCode = connection.getResponseCode();
+    DataResponse<String> principalIrnResponse =
+        executeRequest(USER_IRN_PATH, "GET", header, null, new TypeReference<>() {});
 
-      if (responseCode == HTTP_OK) {
-        JSONObject response = readInputStreamToJsonObject(connection);
-        return IRN.from(response.getString("data"));
-      }
-
-      JSONObject response = readErrorStreamToJsonObject(connection);
-      throw new IamcoreServerException(response.getString("message"), responseCode);
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return IRN.from(principalIrnResponse.data());
   }
 
   @Override
   public void authorizedOnIrns(HttpHeader authorizationHeader, String action, List<IRN> irns) {
-    List<String> resourceIrns = irns.stream()
-        .map(IRN::toString)
-        .collect(Collectors.toList());
+    EvaluateResourcesRequest requestBody =
+        new EvaluateResourcesRequest(action, irns.stream().map(IRN::toString).toList());
 
-    JSONObject requestBody = new JSONObject();
-    requestBody.put("action", action);
-    requestBody.put("resources", resourceIrns);
-
-    try {
-      HttpURLConnection connection = sendRequest(EVALUATE_PATH, "POST", authorizationHeader,
-          requestBody);
-      int responseCode = connection.getResponseCode();
-
-      if (responseCode != HTTP_OK) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    executeRequest(EVALUATE_PATH, "POST", authorizationHeader, requestBody);
   }
 
   @Override
-  public List<IRN> authorizedOnResources(HttpHeader authorizationHeader, String action,
-      List<IRN> resources) {
-    List<String> resourceIrns = resources.stream()
-        .map(IRN::toString)
-        .collect(Collectors.toList());
+  public List<IRN> authorizedOnResources(
+      HttpHeader authorizationHeader, String action, List<IRN> resources) {
+    EvaluateResourcesRequest requestBody =
+        new EvaluateResourcesRequest(action, resources.stream().map(IRN::toString).toList());
 
-    JSONObject requestBody = new JSONObject();
-    requestBody.put("action", action);
-    requestBody.put("resources", resourceIrns);
+    List<String> evaluatedResourceIrns =
+        executeRequest(
+            RESOURCES_EVALUATE_PATH,
+            "POST",
+            authorizationHeader,
+            requestBody,
+            new TypeReference<>() {});
 
-    try {
-      HttpURLConnection connection = sendRequest(RESOURCES_EVALUATE_PATH, "POST",
-          authorizationHeader, requestBody);
-      int responseCode = connection.getResponseCode();
-
-      if (responseCode != HTTP_OK) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-
-      JSONArray response = readInputStreamToJsonArray(connection);
-
-      List<IRN> authorizedResourceIrns = new ArrayList<>();
-      for (int i = 0; i < response.length(); i++) {
-        authorizedResourceIrns.add(IRN.from(response.getString(i)));
-      }
-
-      return authorizedResourceIrns;
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return evaluatedResourceIrns.stream().map(IRN::from).toList();
   }
 
   @Override
-  public List<IRN> authorizedOnResourceType(HttpHeader header, String action, String application,
-      String tenantId, String resourceType) {
-    JSONObject requestBody = new JSONObject();
-    requestBody.put("action", action);
-    requestBody.put("resourceType", resourceType);
-    requestBody.put("application", application);
-
-    if (!StringUtils.isEmpty(tenantId)) {
-      requestBody.put("tenantID", tenantId);
-    }
+  public List<IRN> authorizedOnResourceType(
+      HttpHeader header, String action, String application, String tenantId, String resourceType) {
+    EvaluateResourceTypeRequest requestBody =
+        new EvaluateResourceTypeRequest(
+            action, application, resourceType, StringUtils.isEmpty(tenantId) ? null : tenantId);
 
     String path = String.format("%s?pageSize=%s", EVALUATE_RESOURCES_PATH, PAGE_SIZE);
 
-    try {
-      HttpURLConnection connection = sendRequest(path, "POST", header, requestBody);
-      int responseCode = connection.getResponseCode();
+    PageableResponse<String> pageOfResourceIrns =
+        executeRequest(path, "POST", header, requestBody, new TypeReference<>() {});
 
-      if (responseCode == HTTP_OK) {
-        JSONObject response = readInputStreamToJsonObject(connection);
-
-        return Optional.ofNullable(response.getJSONArray("data"))
-            .map(resources -> {
-              List<IRN> resourceIrns = new ArrayList<>();
-              for (int i = 0; i < resources.length(); i++) {
-                resourceIrns.add(IRN.from(resources.getString(i)));
-              }
-
-              return resourceIrns;
-            }).orElseGet(ArrayList::new);
-      }
-
-      JSONObject response = readErrorStreamToJsonObject(connection);
-      throw new IamcoreServerException(response.getString("message"), responseCode);
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return pageOfResourceIrns.data().stream().map(IRN::from).toList();
   }
 
   @Override
-  public String authorizationDbQueryFilter(HttpHeader authorizationHeader, String action,
-      Database database) {
-    JSONObject requestBody = new JSONObject();
-    requestBody.put("action", action);
-    requestBody.put("database", database.getValue());
+  public String authorizationDbQueryFilter(
+      HttpHeader authorizationHeader, String action, Database database) {
+    AuthorizationDbQueryFilterRequest requestBody =
+        new AuthorizationDbQueryFilterRequest(action, database.getValue());
 
-    try {
-      HttpURLConnection connection = sendRequest(AUTHORIZATION_QUERY_FILTER_PATH, "POST",
-          authorizationHeader, requestBody);
-      int responseCode = connection.getResponseCode();
+    DataResponse<String> dbQueryFilterResponse =
+        executeRequest(
+            AUTHORIZATION_QUERY_FILTER_PATH,
+            "POST",
+            authorizationHeader,
+            requestBody,
+            new TypeReference<>() {});
 
-      if (responseCode == HTTP_OK) {
-        JSONObject response = readInputStreamToJsonObject(connection);
-        return response.getString("data");
-      }
-
-      JSONObject response = readErrorStreamToJsonObject(connection);
-      throw new IamcoreServerException(response.getString("message"), responseCode);
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return dbQueryFilterResponse.data();
   }
 
   @Override
   public IRN createResource(HttpHeader authorizationHeader, CreateResourceRequestDto requestDto) {
-    try {
-      HttpURLConnection connection = sendRequest(RESOURCE_PATH, "POST", authorizationHeader,
-          requestDto.toJson());
-      int responseCode = connection.getResponseCode();
+    DataResponse<ResourceResponse> resourceResponse =
+        executeRequest(
+            RESOURCE_PATH, "POST", authorizationHeader, requestDto, new TypeReference<>() {});
 
-      if (responseCode == HTTP_CREATED) {
-        JSONObject response = readInputStreamToJsonObject(connection);
-        return IRN.from(response.getJSONObject("data").getString("irn"));
-      }
-
-      JSONObject response = readErrorStreamToJsonObject(connection);
-      throw new IamcoreServerException(response.getString("message"), responseCode);
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return resourceResponse.data().irn();
   }
 
   @Override
-  public void updateResource(HttpHeader header, IRN resourceIrn,
-      UpdateResourceRequestDto updateDto) {
-    try {
-      HttpURLConnection connection = sendRequest(RESOURCE_PATH + "/" + resourceIrn.toBase64(),
-          "PATCH", header, updateDto.toJson());
-      int responseCode = connection.getResponseCode();
-
-      if (responseCode != HTTP_NO_CONTENT) {
-        JSONObject response = readInputStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+  public void updateResource(
+      HttpHeader header, IRN resourceIrn, UpdateResourceRequestDto updateDto) {
+    String path = RESOURCE_PATH + "/" + resourceIrn.toBase64();
+    executeRequest(path, "PATCH", header, updateDto);
   }
 
   @Override
   public void deleteResource(HttpHeader header, IRN resourceIrn) {
-    try {
-      HttpURLConnection connection = sendRequest(RESOURCE_PATH + "/" + resourceIrn.toBase64(),
-          "DELETE", header, null);
-      int responseCode = connection.getResponseCode();
-
-      if (responseCode != HTTP_NO_CONTENT) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    String path = RESOURCE_PATH + "/" + resourceIrn.toBase64();
+    executeRequest(path, "DELETE", header, null);
   }
 
   @Override
   public void deleteResources(HttpHeader header, DeleteResourcesRequestDto requestDto) {
-    try {
-      HttpURLConnection connection = sendRequest(RESOURCE_PATH + "/delete", "POST", header,
-          requestDto.toJson());
-      int responseCode = connection.getResponseCode();
-
-      if (responseCode != HTTP_NO_CONTENT) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    executeRequest(RESOURCE_PATH + "/delete", "POST", header, requestDto);
   }
 
   @Override
-  public void createResourceType(HttpHeader header, IRN application,
-      CreateResourceTypeRequestDto requestDto) {
+  public void createResourceType(
+      HttpHeader header, IRN application, CreateResourceTypeRequestDto requestDto) {
     String path = String.format(RESOURCE_TYPE_PATH, application.toBase64());
-
-    try {
-      HttpURLConnection connection = sendRequest(path, "POST", header, requestDto.toJson());
-      int responseCode = connection.getResponseCode();
-
-      if (responseCode != HTTP_CREATED) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    executeRequest(path, "POST", header, requestDto);
   }
 
   @Override
   public List<ResourceTypeDto> getResourceTypes(HttpHeader header, IRN applicationIrn) {
-    String path = String.format(RESOURCE_TYPE_PATH + "?pageSize=%s", applicationIrn.toBase64(),
-        PAGE_SIZE);
+    String path =
+        RESOURCE_TYPE_PATH.formatted(applicationIrn.toBase64()) + "?pageSize=" + PAGE_SIZE;
 
-    try {
-      HttpURLConnection connection = sendRequest(path, "GET", header, null);
-      int responseCode = connection.getResponseCode();
+    PageableResponse<ResourceTypeDto> pageOfResourceTypes =
+        executeRequest(path, "GET", header, null, new TypeReference<>() {});
 
-      if (responseCode != HTTP_OK) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-
-      JSONObject response = readInputStreamToJsonObject(connection);
-
-      return Optional.ofNullable(response.get("data"))
-          .map(Object::toString)
-          .map(this::<List<ResourceTypeDto>>unmarshallJson)
-          .orElse(Collections.emptyList());
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return pageOfResourceTypes.data();
   }
 
   @Override
   public Optional<String> getPrincipalApiKey(HttpHeader header, IRN principalIrn) {
-    String path = String.format(API_KEY_PATH + "?state=active&pageSize=1", principalIrn.toBase64());
+    String path = API_KEY_PATH.formatted(principalIrn.toBase64()) + "?state=active&pageSize=1";
 
-    try {
-      HttpURLConnection connection = sendRequest(path, "GET", header, null);
-      int responseCode = connection.getResponseCode();
+    PageableResponse<ApiKeyResponse> pageOfApiKeys =
+        executeRequest(path, "GET", header, null, new TypeReference<>() {});
 
-      if (connection.getResponseCode() != HTTP_OK) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-
-      JSONObject response = readInputStreamToJsonObject(connection);
-      JSONArray apiKey = response.getJSONArray("data");
-
-      if (apiKey.length() != 1) {
-        return Optional.empty();
-      }
-
-      return Optional.ofNullable(apiKey.getJSONObject(0).getString("apiKey"));
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return pageOfApiKeys.data().stream().findFirst().map(ApiKeyResponse::apiKey);
   }
 
   @Override
   public String createPrincipalApiKey(HttpHeader header, IRN principalIrn) {
-    try {
-      String url = String.format(API_KEY_PATH, principalIrn.toBase64());
-      HttpURLConnection connection = sendRequest(url, "POST", header, null);
-      int responseCode = connection.getResponseCode();
+    String url = API_KEY_PATH.formatted(principalIrn.toBase64());
 
-      if (connection.getResponseCode() != HTTP_CREATED) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
+    return executeRequest(url, "POST", header, null, this::getIdFromLocationHeader);
+  }
 
-      String location = connection.getHeaderField("Location");
-      return location.substring(location.lastIndexOf('/') + 1);
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
+  private String getIdFromLocationHeader(HttpResponse<String> response) {
+    Optional<String> location = response.headers().firstValue("Location");
+    if (location.isEmpty()) {
+      throw new IamcoreServerException(
+          "Location header not found in response for created API Key", response.statusCode());
     }
+
+    return location.get().substring(location.get().lastIndexOf('/') + 1);
   }
 
   @Override
   public List<PoolInfo> getPools(HttpHeader header, PoolsQueryFilter filter) {
-    Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("pageSize", String.valueOf(PAGE_SIZE));
-    queryParams.put("irn", filter.getIrn());
-    queryParams.put("name", filter.getName());
-    queryParams.put("resourceIRN", filter.getResourceIrn());
+    String poolIrn = filter.irn() == null ? "" : filter.irn().toBase64();
+    String poolName = filter.name();
+    String resourceIrn = filter.resourceIrn() == null ? "" : filter.resourceIrn().toBase64();
+
+    Map<String, String> queryParams =
+        Map.of(
+            "pageSize", String.valueOf(PAGE_SIZE),
+            "irn", poolIrn,
+            "name", poolName,
+            "resourceIRN", resourceIrn);
 
     String rawQuery = buildRawQuery(queryParams);
     String path = POOLS_PATH + "?" + rawQuery;
 
-    try {
-      HttpURLConnection connection = sendRequest(path, "GET", header, null);
-      int responseCode = connection.getResponseCode();
+    PageableResponse<PoolInfo> pageOfPools =
+        executeRequest(path, "GET", header, null, new TypeReference<>() {});
 
-      if (responseCode != HTTP_OK) {
-        JSONObject response = readErrorStreamToJsonObject(connection);
-        throw new IamcoreServerException(response.getString("message"), responseCode);
-      }
-
-      JSONObject response = readInputStreamToJsonObject(connection);
-
-      return Optional.ofNullable(response.get("data"))
-          .map(Object::toString)
-          .map(this::<List<PoolInfo>>unmarshallJson)
-          .orElse(Collections.emptyList());
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
-    }
+    return pageOfPools.data();
   }
 
   private String buildRawQuery(Map<String, String> queryParams) {
@@ -395,77 +226,102 @@ public class ServerClientImpl implements ServerClient {
         .collect(Collectors.joining("&"));
   }
 
-  private <T> T unmarshallJson(String jsonString) {
+  private <T> T readResponse(String responseBody, TypeReference<T> ref) {
     try {
-      return objectMapper.readValue(jsonString, new TypeReference<T>(){});
-    } catch (JsonProcessingException ex) {
-      throw new SdkException(ex.getMessage());
+      return objectMapper.readValue(responseBody, ref);
+    } catch (IOException ex) {
+      throw new SdkException("Failed to read or parse response: " + ex.getMessage());
     }
   }
 
-  private HttpURLConnection sendRequest(String path, String method, HttpHeader header,
-      JSONObject body) throws IOException {
-    URL requestUrl = getUrl(path);
-    HttpURLConnection connection = (HttpURLConnection) requestUrl.openConnection();
-    connection.setRequestMethod(method);
+  private HttpResponse<String> sendRequest(
+      String path, String method, HttpHeader header, Object body)
+      throws IOException, InterruptedException {
+    URI requestUri = serverUrl.resolve(path);
+
+    HttpRequest.Builder requestBuilder =
+        HttpRequest.newBuilder().uri(requestUri).timeout(Duration.ofSeconds(60));
 
     if (header != null) {
-      connection.setRequestProperty(header.getName(), header.getValue());
-    }
-
-    if (Arrays.asList("POST", "PUT", "OPTIONS").contains(method)) {
-      connection.setDoOutput(true);
-      connection.setRequestProperty("Content-Type", "application/json");
+      requestBuilder.header(header.getName(), header.getValue());
     }
 
     if (body != null) {
-      try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
-        outputStream.writeBytes(body.toString());
-        outputStream.flush();
+      String jsonBody = objectMapper.writeValueAsString(body);
+      HttpRequest.BodyPublisher bodyPublisher =
+          HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8);
+
+      switch (method) {
+        case "POST" -> requestBuilder.POST(bodyPublisher);
+        case "PUT" -> requestBuilder.PUT(bodyPublisher);
+        case "PATCH" -> requestBuilder.method("PATCH", bodyPublisher);
+        default -> throw new SdkException("Unsupported HTTP method with body: " + method);
+      }
+      requestBuilder.header("Content-Type", "application/json");
+    } else {
+      switch (method) {
+        case "GET" -> requestBuilder.GET();
+        case "DELETE" -> requestBuilder.DELETE();
+        case "POST" -> requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
+        default -> requestBuilder.method(method, HttpRequest.BodyPublishers.noBody());
       }
     }
 
-    return connection;
+    HttpRequest request = requestBuilder.build();
+    return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
   }
 
-  private URL getUrl(String path) throws MalformedURLException {
-    return this.serverUrl.resolve(path).toURL();
+  private void executeRequest(String path, String method, HttpHeader header, Object requestBody) {
+    executeRequest(path, method, header, requestBody, response -> null);
   }
 
-  private static JSONArray readInputStreamToJsonArray(HttpURLConnection connection)
-      throws IOException {
-    try (InputStream inputStream = connection.getInputStream()) {
-      return new JSONArray(readInputStreamToString(inputStream));
+  private <T> T executeRequest(
+      String path, String method, HttpHeader header, Object requestBody, TypeReference<T> ref) {
+    return executeRequest(
+        path, method, header, requestBody, response -> readResponse(response.body(), ref));
+  }
+
+  private <T> T executeRequest(
+      String path,
+      String method,
+      HttpHeader header,
+      Object requestBody,
+      ResponseProcessor<T> responseProcessor) {
+    try {
+      HttpResponse<String> response = sendRequest(path, method, header, requestBody);
+      int responseCode = response.statusCode();
+
+      if (responseCode >= 200 && responseCode < 300) {
+        return responseProcessor.process(response);
+      } else {
+        String errorMessage = parseErrorResponse(response.body());
+        throw new IamcoreServerException(
+            "Server error (Status " + responseCode + "): " + errorMessage, responseCode);
+      }
+    } catch (IOException | InterruptedException ex) {
+      throw new SdkException(
+          "Network or I/O error during request to " + path + ": " + ex.getMessage());
     }
   }
 
-  private static JSONObject readInputStreamToJsonObject(HttpURLConnection connection)
-      throws IOException {
-    try (InputStream inputStream = connection.getInputStream()) {
-      return new JSONObject(readInputStreamToString(inputStream));
-    }
-  }
-
-  private static JSONObject readErrorStreamToJsonObject(HttpURLConnection connection)
-      throws IOException {
-    try (InputStream inputStream = connection.getErrorStream()) {
-      return new JSONObject(readInputStreamToString(inputStream));
-    }
-  }
-
-  private static String readInputStreamToString(InputStream inputStream) {
-    try (InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-        BufferedReader reader = new BufferedReader(inputStreamReader)) {
-      StringBuilder stringBuilder = new StringBuilder();
-      String line;
-
-      while ((line = reader.readLine()) != null) {
-        stringBuilder.append(line);
+  private String parseErrorResponse(String responseBody) {
+    try {
+      if (responseBody == null || responseBody.trim().isEmpty()) {
+        return "No error response body available.";
       }
 
-      return stringBuilder.toString();
-    } catch (IOException ex) {
-      throw new SdkException(ex.getMessage());
+      Map<String, String> errorResponse =
+          readResponse(responseBody, new TypeReference<Map<String, String>>() {});
+
+      return errorResponse.getOrDefault("message", "Unknown server error.");
+    } catch (SdkException ex) {
+      return "Failed to parse error response: " + responseBody;
     }
+  }
+
+  @FunctionalInterface
+  private interface ResponseProcessor<T> {
+
+    T process(HttpResponse<String> response) throws IOException;
   }
 }

@@ -1,7 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.iamcore</groupId>
@@ -10,7 +12,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>21</java.version>
         <jakarta.servlet-api>6.0.0</jakarta.servlet-api>
         <iamcore-irn.version>0.0.4</iamcore-irn.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
@@ -43,10 +45,40 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.datatype.version}</version>
         </dependency>
+         <dependency>
+             <groupId>io.iamcore</groupId>
+             <artifactId>iamcore-irn</artifactId>
+             <version>${iamcore-irn.version}</version>
+         </dependency>
         <dependency>
-            <groupId>io.iamcore</groupId>
-            <artifactId>iamcore-irn</artifactId>
-            <version>${iamcore-irn.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.8.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.8.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>5.8.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>3.13.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.26.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -80,15 +112,20 @@
                         </goals>
                     </execution>
                 </executions>
+             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
             </plugin>
-        </plugins>
-    </build>
-
+         </plugins>
+     </build>
     <repositories>
         <repository>
             <id>iamcore.releases</id>
             <name>iamcore-releases</name>
-            <url>https://artifactory.kaaiot.net/artifactory/iamcore-releases</url>
+            <url
+      >https://artifactory.kaaiot.net/artifactory/iamcore-releases</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -96,7 +133,8 @@
         <repository>
             <id>iamcore.snapshots</id>
             <name>iamcore-snapshots</name>
-            <url>https://artifactory.kaaiot.net/artifactory/iamcore-snapshots</url>
+            <url
+      >https://artifactory.kaaiot.net/artifactory/iamcore-snapshots</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
@@ -107,12 +145,14 @@
         <repository>
             <id>iamcore.releases</id>
             <name>iamcore-releases</name>
-            <url>https://artifactory.kaaiot.net/artifactory/iamcore-releases</url>
+            <url
+      >https://artifactory.kaaiot.net/artifactory/iamcore-releases</url>
         </repository>
         <snapshotRepository>
             <id>iamcore.snapshots</id>
             <name>iamcore-snapshots</name>
-            <url>https://artifactory.kaaiot.net/artifactory/iamcore-snapshots</url>
+            <url
+      >https://artifactory.kaaiot.net/artifactory/iamcore-snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
