@@ -663,8 +663,9 @@ class ServerClientTest {
       Optional<String> apiKey = serverClient.getPrincipalApiKey(authHeader, testPrincipalIrn);
 
       // then
-      assertThat(apiKey).isPresent();
-      assertThat(apiKey).contains(expectedApiKey);
+      assertThat(apiKey)
+          .isPresent()
+          .contains(expectedApiKey);
     }
 
     @Test

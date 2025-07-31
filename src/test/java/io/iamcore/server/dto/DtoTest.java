@@ -15,14 +15,17 @@ class DtoTest {
   void apiKeyResponse() throws Exception {
     String json =
         """
-        {
-          "apiKey": "test-api-key",
-          "state": "active"
-        }
-        """;
+          {
+            "apiKey": "2W9Xv6Ae7y0nHf8Mb1JdKc5Tl4sZgIzNtEjPuSqOxDhYi3LrpQmGkFVbCh94ygh6",
+            "state": "active",
+            "lastUsed": "2021-10-19T17:57:31.14492667Z",
+            "created": "2021-10-18T12:27:15.55267632Z",
+            "updated": "2021-10-18T12:27:15.55267632Z"
+          }
+          """;
 
     ApiKeyResponse dto = objectMapper.readValue(json, ApiKeyResponse.class);
-    assertThat(dto.apiKey()).isEqualTo("test-api-key");
+    assertThat(dto.apiKey()).isEqualTo("2W9Xv6Ae7y0nHf8Mb1JdKc5Tl4sZgIzNtEjPuSqOxDhYi3LrpQmGkFVbCh94ygh6");
     assertThat(dto.state()).isEqualTo("active");
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
@@ -34,8 +37,9 @@ class DtoTest {
     AuthorizationDbQueryFilterRequest dto = new AuthorizationDbQueryFilterRequest("read", "mongo");
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
-    assertThat(marshalledJson).contains("\"action\":\"read\"");
-    assertThat(marshalledJson).contains("\"database\":\"mongo\"");
+    assertThat(marshalledJson)
+      .contains("\"action\":\"read\"")
+      .contains("\"database\":\"mongo\"");
   }
 
   @Test
@@ -51,13 +55,14 @@ class DtoTest {
             Collections.singleton("pool1"));
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
-    assertThat(marshalledJson).contains("\"application\":\"test-app\"");
-    assertThat(marshalledJson).contains("\"tenantID\":\"tenant1\"");
-    assertThat(marshalledJson).contains("\"resourceType\":\"document\"");
-    assertThat(marshalledJson).contains("\"path\":\"/\"");
-    assertThat(marshalledJson).contains("\"name\":\"test-resource\"");
-    assertThat(marshalledJson).contains("\"enabled\":true");
-    assertThat(marshalledJson).contains("\"poolIDs\":[\"pool1\"]");
+    assertThat(marshalledJson)
+      .contains("\"application\":\"test-app\"")
+      .contains("\"tenantID\":\"tenant1\"")
+      .contains("\"resourceType\":\"document\"")
+      .contains("\"path\":\"/\"")
+      .contains("\"name\":\"test-resource\"")
+      .contains("\"enabled\":true")
+      .contains("\"poolIDs\":[\"pool1\"]");
   }
 
   @Test
@@ -67,10 +72,11 @@ class DtoTest {
             "document", "Document resource type", "doc", Collections.singleton("read"));
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
-    assertThat(marshalledJson).contains("\"type\":\"document\"");
-    assertThat(marshalledJson).contains("\"description\":\"Document resource type\"");
-    assertThat(marshalledJson).contains("\"actionPrefix\":\"doc\"");
-    assertThat(marshalledJson).contains("\"operations\":[\"read\"]");
+    assertThat(marshalledJson)
+      .contains("\"type\":\"document\"")
+      .contains("\"description\":\"Document resource type\"")
+      .contains("\"actionPrefix\":\"doc\"")
+      .contains("\"operations\":[\"read\"]");
   }
 
   @Test
@@ -88,10 +94,11 @@ class DtoTest {
         new EvaluateResourceTypeRequest("read", "test-app", "document", "tenant1");
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
-    assertThat(marshalledJson).contains("\"action\":\"read\"");
-    assertThat(marshalledJson).contains("\"application\":\"test-app\"");
-    assertThat(marshalledJson).contains("\"resourceType\":\"document\"");
-    assertThat(marshalledJson).contains("\"tenantID\":\"tenant1\"");
+    assertThat(marshalledJson)
+      .contains("\"action\":\"read\"")
+      .contains("\"application\":\"test-app\"")
+      .contains("\"resourceType\":\"document\"")
+      .contains("\"tenantID\":\"tenant1\"");
   }
 
   @Test
@@ -100,27 +107,30 @@ class DtoTest {
         new EvaluateResourcesRequest("read", Collections.singletonList("resource1"));
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
-    assertThat(marshalledJson).contains("\"action\":\"read\"");
-    assertThat(marshalledJson).contains("\"resources\":[\"resource1\"]");
+    assertThat(marshalledJson)
+      .contains("\"action\":\"read\"")
+      .contains("\"resources\":[\"resource1\"]");
   }
 
   @Test
   void poolResponse() throws Exception {
     String json =
         """
-        {
-          "id": "pool1",
-          "irn": "irn:iamcore:iamcore::/pool/pool1:pool/pool1",
-          "name": "Test Pool",
-          "resources": ["resource1"]
-        }
-        """;
+          {
+            "id": "aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjpwb29sL3Byb2QvYWRtaW4=",
+            "irn": "irn:rc73dbh7q0:iamcore:4atcicnisg::pool/prod/admin",
+            "name": "admin",
+            "resources": [
+              "aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjp1c2VyL3RvbQ=="
+            ]
+          }
+          """;
 
     PoolResponse dto = objectMapper.readValue(json, PoolResponse.class);
-    assertThat(dto.id()).isEqualTo("pool1");
-    assertThat(dto.irn()).hasToString("irn:iamcore:iamcore::/pool/pool1:pool/pool1");
-    assertThat(dto.name()).isEqualTo("Test Pool");
-    assertThat(dto.resources()).containsExactly("resource1");
+    assertThat(dto.id()).isEqualTo("aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjpwb29sL3Byb2QvYWRtaW4=");
+    assertThat(dto.irn()).hasToString("irn:rc73dbh7q0:iamcore:4atcicnisg::pool/prod/admin");
+    assertThat(dto.name()).isEqualTo("admin");
+    assertThat(dto.resources()).containsExactly("aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjp1c2VyL3RvbQ==");
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
     assertThat(marshalledJson).isNotNull();
@@ -130,26 +140,29 @@ class DtoTest {
   void resourceTypeDto() throws Exception {
     String json =
         """
-        {
-          "id": "type1",
-          "irn": "irn:iamcore:application::resource-type/document",
-          "type": "document",
-          "description": "Document type",
-          "actionPrefix": "doc",
-          "created": "2023-01-01T12:00:00Z",
-          "updated": "2023-01-01T12:00:00Z",
-          "operations": ["read", "write"]
-        }
-        """;
+          {
+            "id": "aXJuOnJjNzNkYmg3cTA6bXlhcHA6OjpyZXNvdXJjZS10eXBlL2RvY3VtZW50",
+            "irn": "irn:rc73dbh7q0:myapp:::resource-type/document",
+            "type": "document",
+            "description": "Representation of the 'document' resource type",
+            "actionPrefix": "document",
+            "created": "2021-10-18T12:27:15.55267632Z",
+            "updated": "2021-10-18T12:27:15.55267632Z",
+            "operations": [
+              "sign",
+              "export"
+            ]
+          }
+          """;
 
     objectMapper.findAndRegisterModules();
     ResourceTypeDto dto = objectMapper.readValue(json, ResourceTypeDto.class);
-    assertThat(dto.getId()).isEqualTo("type1");
-    assertThat(dto.getIrn()).isEqualTo("irn:iamcore:application::resource-type/document");
+    assertThat(dto.getId()).isEqualTo("aXJuOnJjNzNkYmg3cTA6bXlhcHA6OjpyZXNvdXJjZS10eXBlL2RvY3VtZW50");
+    assertThat(dto.getIrn()).isEqualTo("irn:rc73dbh7q0:myapp:::resource-type/document");
     assertThat(dto.getType()).isEqualTo("document");
-    assertThat(dto.getDescription()).isEqualTo("Document type");
-    assertThat(dto.getActionPrefix()).isEqualTo("doc");
-    assertThat(dto.getOperations()).containsExactly("read", "write");
+    assertThat(dto.getDescription()).isEqualTo("Representation of the 'document' resource type");
+    assertThat(dto.getActionPrefix()).isEqualTo("document");
+    assertThat(dto.getOperations()).containsExactly("sign", "export");
 
     String marshalledJson = objectMapper.writeValueAsString(dto);
     assertThat(marshalledJson).isNotNull();

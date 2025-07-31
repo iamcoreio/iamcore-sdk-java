@@ -1,11 +1,13 @@
 package io.iamcore.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.iamcore.IRN;
 import io.iamcore.StringUtils;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record ResourceResponse(
     String id,
     IRN irn,
@@ -34,7 +36,18 @@ public record ResourceResponse(
       @JsonProperty("description") String description,
       @JsonProperty("metadata") Object metadata,
       @JsonProperty("poolIDs") List<String> poolIds) {
-    this(id, StringUtils.isEmpty(irn) ? null : IRN.from(irn), application, tenantId, name,
-        displayName, path, resourceType, enabled, description, metadata, poolIds);
+    this(
+        id,
+        StringUtils.isEmpty(irn) ? null : IRN.from(irn),
+        application,
+        tenantId,
+        name,
+        displayName,
+        path,
+        resourceType,
+        enabled,
+        description,
+        metadata,
+        poolIds);
   }
 }
