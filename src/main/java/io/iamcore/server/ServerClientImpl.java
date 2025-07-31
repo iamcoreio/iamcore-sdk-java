@@ -28,7 +28,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -227,21 +226,12 @@ public class ServerClientImpl implements ServerClient {
         .collect(Collectors.joining("&"));
   }
 
-  private <T> T readResponse(String responseBody, TypeReference<T> ref) {
-    try {
-      return objectMapper.readValue(responseBody, ref);
-    } catch (IOException ex) {
-      throw new SdkException("Failed to read or parse response: " + ex.getMessage());
-    }
-  }
-
   private HttpResponse<String> sendRequest(
       String path, String method, HttpHeader header, Object body)
       throws IOException, InterruptedException {
     URI requestUri = serverUrl.resolve(path);
 
-    HttpRequest.Builder requestBuilder =
-        HttpRequest.newBuilder().uri(requestUri).timeout(Duration.ofSeconds(60));
+    HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(requestUri);
 
     if (header != null) {
       requestBuilder.header(header.getName(), header.getValue());
@@ -249,8 +239,7 @@ public class ServerClientImpl implements ServerClient {
 
     if (body != null) {
       String jsonBody = objectMapper.writeValueAsString(body);
-      HttpRequest.BodyPublisher bodyPublisher =
-          HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8);
+      HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofString(jsonBody);
 
       switch (method) {
         case "POST" -> requestBuilder.POST(bodyPublisher);
@@ -317,6 +306,14 @@ public class ServerClientImpl implements ServerClient {
       return errorResponse.getOrDefault("message", "Unknown server error.");
     } catch (SdkException ex) {
       return "Failed to parse error response: " + responseBody;
+    }
+  }
+
+  private <T> T readResponse(String responseBody, TypeReference<T> ref) {
+    try {
+      return objectMapper.readValue(responseBody, ref);
+    } catch (IOException ex) {
+      throw new SdkException("Failed to read or parse response: " + ex.getMessage());
     }
   }
 
