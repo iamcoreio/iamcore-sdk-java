@@ -19,7 +19,7 @@ max_line_length = 100
 # XML files (Maven POM, Checkstyle config, etc.)
 [*.xml]
 indent_style = space
-indent_size = 2
+indent_size = 4
 
 # Properties files
 [*.properties]
