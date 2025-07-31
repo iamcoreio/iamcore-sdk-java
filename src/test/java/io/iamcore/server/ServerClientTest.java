@@ -194,7 +194,8 @@ class ServerClientTest {
     String tenantId = "tenant1";
     String resourceType = "document";
     stubFor(
-        post(urlMatching(EVALUATE_RESOURCES_PATH + "\\?.*"))
+        post(urlPathEqualTo(EVALUATE_RESOURCES_PATH))
+            .withQueryParam("pageSize", equalTo("100000"))
             .withRequestBody(containing("\"action\":\"" + action + "\""))
             .withRequestBody(containing("\"application\":\"" + application + "\""))
             .withRequestBody(containing("\"resourceType\":\"" + resourceType + "\""))
@@ -222,7 +223,8 @@ class ServerClientTest {
     String tenantId = "tenant1";
     String resourceType = "document";
     stubFor(
-        post(urlMatching(EVALUATE_RESOURCES_PATH + "\\?.*"))
+        post(urlPathEqualTo(EVALUATE_RESOURCES_PATH))
+            .withQueryParam("pageSize", equalTo("100000"))
             .withRequestBody(containing("\"action\":\"" + action + "\""))
             .willReturn(
                 aResponse()
@@ -247,7 +249,8 @@ class ServerClientTest {
     String tenantId = "tenant1";
     String resourceType = "document";
     stubFor(
-        post(urlMatching(EVALUATE_RESOURCES_PATH + "\\?.*"))
+        post(urlPathEqualTo(EVALUATE_RESOURCES_PATH))
+            .withQueryParam("pageSize", equalTo("100000"))
             .willReturn(
                 aResponse()
                     .withStatus(403)
@@ -555,7 +558,8 @@ class ServerClientTest {
         """;
 
     stubFor(
-        get(urlMatching(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64()) + "\\?.*"))
+        get(urlPathEqualTo(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64())))
+            .withQueryParam("pageSize", equalTo("100000"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -579,7 +583,8 @@ class ServerClientTest {
   void getResourceTypes_serverError() {
     // given
     stubFor(
-        get(urlMatching(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64()) + "\\?.*"))
+        get(urlPathEqualTo(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64())))
+            .withQueryParam("pageSize", equalTo("100000"))
             .willReturn(
                 aResponse()
                     .withStatus(404)
@@ -597,7 +602,9 @@ class ServerClientTest {
     // given
     String expectedApiKey = "test-api-key";
     stubFor(
-        get(urlMatching(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64()) + "\\?.*"))
+        get(urlPathEqualTo(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64())))
+            .withQueryParam("state", equalTo("active"))
+            .withQueryParam("pageSize", equalTo("1"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -616,7 +623,9 @@ class ServerClientTest {
   void getPrincipalApiKey_notFound() {
     // given
     stubFor(
-        get(urlMatching(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64()) + "\\?.*"))
+        get(urlPathEqualTo(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64())))
+            .withQueryParam("state", equalTo("active"))
+            .withQueryParam("pageSize", equalTo("1"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -634,7 +643,9 @@ class ServerClientTest {
   void getPrincipalApiKey_serverError() {
     // given
     stubFor(
-        get(urlMatching(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64()) + "\\?.*"))
+        get(urlPathEqualTo(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64())))
+            .withQueryParam("state", equalTo("active"))
+            .withQueryParam("pageSize", equalTo("1"))
             .willReturn(
                 aResponse()
                     .withStatus(403)
@@ -711,17 +722,10 @@ class ServerClientTest {
     PoolsQueryFilter filter = new PoolsQueryFilter(poolIrn, "", resourceIrn);
 
     stubFor(
-        get(urlMatching(
-                POOLS_PATH
-                    + "\\?"
-                    + "(?=.*pageSize=100000)"
-                    + "(?=.*resourceIRN="
-                    + resourceIrn.toBase64()
-                    + ")"
-                    + "(?=.*irn="
-                    + poolIrn.toBase64()
-                    + ")"
-                    + "[^\\s]*"))
+        get(urlPathEqualTo(POOLS_PATH))
+            .withQueryParam("pageSize", equalTo("100000"))
+            .withQueryParam("resourceIRN", equalTo(resourceIrn.toBase64()))
+            .withQueryParam("irn", equalTo(poolIrn.toBase64()))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -747,12 +751,13 @@ class ServerClientTest {
     // given
     PoolsQueryFilter filter = new PoolsQueryFilter(null, "", null);
     stubFor(
-        get(urlMatching(POOLS_PATH + "\\?.*"))
+        get(urlPathEqualTo(POOLS_PATH))
+            .withQueryParam("pageSize", equalTo("100000"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
-                    .withBody("{\"data\": null}")));
+                    .withBody("{\"data\": []}")));
 
     // when
     List<PoolResponse> pools = serverClient.getPools(authHeader, filter);
@@ -766,7 +771,9 @@ class ServerClientTest {
     // given
     PoolsQueryFilter filter = new PoolsQueryFilter(null, "test", null);
     stubFor(
-        get(urlMatching(POOLS_PATH + "\\?.*"))
+        get(urlPathEqualTo(POOLS_PATH))
+            .withQueryParam("name", equalTo("test"))
+            .withQueryParam("pageSize", equalTo("100000"))
             .willReturn(
                 aResponse()
                     .withStatus(500)
