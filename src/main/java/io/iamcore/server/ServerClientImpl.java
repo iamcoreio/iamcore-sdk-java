@@ -29,6 +29,7 @@ import io.iamcore.server.dto.ResourceTypeDto;
 import io.iamcore.server.dto.UpdateResourceRequestDto;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -226,8 +227,13 @@ public class ServerClientImpl implements ServerClient {
   private String buildRawQuery(Map<String, String> queryParams) {
     return queryParams.entrySet().stream()
         .filter(entry -> !StringUtils.isEmpty(entry.getValue()))
-        .map(entry -> entry.getKey() + "=" + entry.getValue())
+        .map(this::encodeQueryParameter)
         .collect(Collectors.joining("&"));
+  }
+
+  private String encodeQueryParameter(Map.Entry<String, String> entry) {
+    String encodedValue = URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8);
+    return entry.getKey() + "=" + encodedValue;
   }
 
   private HttpResponse<String> sendRequest(
