@@ -1,5 +1,10 @@
 package io.iamcore.server;
 
+import static io.iamcore.server.ServerClientImpl.HttpMethod.DELETE;
+import static io.iamcore.server.ServerClientImpl.HttpMethod.GET;
+import static io.iamcore.server.ServerClientImpl.HttpMethod.PATCH;
+import static io.iamcore.server.ServerClientImpl.HttpMethod.POST;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.iamcore.HttpHeader;
@@ -35,18 +40,17 @@ import java.util.stream.Collectors;
 
 public class ServerClientImpl implements ServerClient {
 
-  public static final String USER_IRN_PATH = "/api/v1/users/me/irn";
-  public static final String EVALUATE_PATH = "/api/v1/evaluate";
-  public static final String RESOURCES_EVALUATE_PATH =
-      "/api/v1/resources/evaluate?filterResources=true";
-  public static final String EVALUATE_RESOURCES_PATH = "/api/v1/evaluate/resources";
-  public static final String AUTHORIZATION_QUERY_FILTER_PATH =
-      "/api/v1/evaluate/database-query-filter";
-  public static final String RESOURCE_PATH = "/api/v1/resources";
-  public static final String APPLICATION_PATH = "/api/v1/applications";
-  public static final String RESOURCE_TYPE_PATH_TEMPLATE = APPLICATION_PATH + "/%s/resource-types";
-  public static final String API_KEY_PATH_TEMPLATE = "/api/v1/principals/%s/api-keys";
-  public static final String POOLS_PATH = "/api/v1/pools";
+  static final String USER_IRN_PATH = "/api/v1/users/me/irn";
+  static final String EVALUATE_PATH = "/api/v1/evaluate";
+  static final String RESOURCES_EVALUATE_PATH = "/api/v1/resources/evaluate?filterResources=true";
+  static final String EVALUATE_RESOURCES_PATH = "/api/v1/evaluate/resources";
+  static final String AUTHORIZATION_QUERY_FILTER_PATH = "/api/v1/evaluate/database-query-filter";
+  static final String RESOURCE_PATH = "/api/v1/resources";
+  static final String APPLICATION_PATH = "/api/v1/applications";
+  static final String RESOURCE_TYPE_PATH_TEMPLATE = APPLICATION_PATH + "/%s/resource-types";
+  static final String API_KEY_PATH_TEMPLATE = "/api/v1/principals/%s/api-keys";
+  static final String POOLS_PATH = "/api/v1/pools";
+
   private static final int PAGE_SIZE = 100000;
 
   private final URI serverUrl;
@@ -62,7 +66,7 @@ public class ServerClientImpl implements ServerClient {
   @Override
   public IRN getPrincipalIrn(HttpHeader header) {
     DataResponse<String> principalIrnResponse =
-        executeRequest(USER_IRN_PATH, "GET", header, null, new TypeReference<>() {});
+        executeRequest(USER_IRN_PATH, GET, header, null, new TypeReference<>() {});
 
     return IRN.from(principalIrnResponse.data());
   }
@@ -72,7 +76,7 @@ public class ServerClientImpl implements ServerClient {
     EvaluateResourcesRequest requestBody =
         new EvaluateResourcesRequest(action, irns.stream().map(IRN::toString).toList());
 
-    executeRequest(EVALUATE_PATH, "POST", authorizationHeader, requestBody);
+    executeRequest(EVALUATE_PATH, POST, authorizationHeader, requestBody);
   }
 
   @Override
@@ -84,7 +88,7 @@ public class ServerClientImpl implements ServerClient {
     List<String> evaluatedResourceIrns =
         executeRequest(
             RESOURCES_EVALUATE_PATH,
-            "POST",
+            POST,
             authorizationHeader,
             requestBody,
             new TypeReference<>() {});
@@ -102,7 +106,7 @@ public class ServerClientImpl implements ServerClient {
     String path = String.format("%s?pageSize=%s", EVALUATE_RESOURCES_PATH, PAGE_SIZE);
 
     PageableResponse<String> pageOfResourceIrns =
-        executeRequest(path, "POST", header, requestBody, new TypeReference<>() {});
+        executeRequest(path, POST, header, requestBody, new TypeReference<>() {});
 
     return pageOfResourceIrns.data().stream().map(IRN::from).toList();
   }
@@ -116,7 +120,7 @@ public class ServerClientImpl implements ServerClient {
     DataResponse<String> dbQueryFilterResponse =
         executeRequest(
             AUTHORIZATION_QUERY_FILTER_PATH,
-            "POST",
+            POST,
             authorizationHeader,
             requestBody,
             new TypeReference<>() {});
@@ -128,7 +132,7 @@ public class ServerClientImpl implements ServerClient {
   public IRN createResource(HttpHeader authorizationHeader, CreateResourceRequestDto requestDto) {
     DataResponse<ResourceResponse> resourceResponse =
         executeRequest(
-            RESOURCE_PATH, "POST", authorizationHeader, requestDto, new TypeReference<>() {});
+            RESOURCE_PATH, POST, authorizationHeader, requestDto, new TypeReference<>() {});
 
     return resourceResponse.data().irn();
   }
@@ -137,25 +141,25 @@ public class ServerClientImpl implements ServerClient {
   public void updateResource(
       HttpHeader header, IRN resourceIrn, UpdateResourceRequestDto updateDto) {
     String path = RESOURCE_PATH + "/" + resourceIrn.toBase64();
-    executeRequest(path, "PATCH", header, updateDto);
+    executeRequest(path, PATCH, header, updateDto);
   }
 
   @Override
   public void deleteResource(HttpHeader header, IRN resourceIrn) {
     String path = RESOURCE_PATH + "/" + resourceIrn.toBase64();
-    executeRequest(path, "DELETE", header, null);
+    executeRequest(path, DELETE, header, null);
   }
 
   @Override
   public void deleteResources(HttpHeader header, DeleteResourcesRequestDto requestDto) {
-    executeRequest(RESOURCE_PATH + "/delete", "POST", header, requestDto);
+    executeRequest(RESOURCE_PATH + "/delete", POST, header, requestDto);
   }
 
   @Override
   public void createResourceType(
       HttpHeader header, IRN application, CreateResourceTypeRequestDto requestDto) {
     String path = String.format(RESOURCE_TYPE_PATH_TEMPLATE, application.toBase64());
-    executeRequest(path, "POST", header, requestDto);
+    executeRequest(path, POST, header, requestDto);
   }
 
   @Override
@@ -164,7 +168,7 @@ public class ServerClientImpl implements ServerClient {
         RESOURCE_TYPE_PATH_TEMPLATE.formatted(applicationIrn.toBase64()) + "?pageSize=" + PAGE_SIZE;
 
     PageableResponse<ResourceTypeDto> pageOfResourceTypes =
-        executeRequest(path, "GET", header, null, new TypeReference<>() {});
+        executeRequest(path, GET, header, null, new TypeReference<>() {});
 
     return pageOfResourceTypes.data();
   }
@@ -175,7 +179,7 @@ public class ServerClientImpl implements ServerClient {
         API_KEY_PATH_TEMPLATE.formatted(principalIrn.toBase64()) + "?state=active&pageSize=1";
 
     PageableResponse<ApiKeyResponse> pageOfApiKeys =
-        executeRequest(path, "GET", header, null, new TypeReference<>() {});
+        executeRequest(path, GET, header, null, new TypeReference<>() {});
 
     return pageOfApiKeys.data().stream().findFirst().map(ApiKeyResponse::apiKey);
   }
@@ -184,7 +188,7 @@ public class ServerClientImpl implements ServerClient {
   public String createPrincipalApiKey(HttpHeader header, IRN principalIrn) {
     String url = API_KEY_PATH_TEMPLATE.formatted(principalIrn.toBase64());
 
-    return executeRequest(url, "POST", header, null, this::getIdFromLocationHeader);
+    return executeRequest(url, POST, header, null, this::getIdFromLocationHeader);
   }
 
   private String getIdFromLocationHeader(HttpResponse<String> response) {
@@ -214,7 +218,7 @@ public class ServerClientImpl implements ServerClient {
     String path = POOLS_PATH + "?" + rawQuery;
 
     PageableResponse<PoolResponse> pageOfPools =
-        executeRequest(path, "GET", header, null, new TypeReference<>() {});
+        executeRequest(path, GET, header, null, new TypeReference<>() {});
 
     return pageOfPools.data();
   }
@@ -227,53 +231,63 @@ public class ServerClientImpl implements ServerClient {
   }
 
   private HttpResponse<String> sendRequest(
-      String path, String method, HttpHeader header, Object body)
-      throws IOException, InterruptedException {
-    URI requestUri = serverUrl.resolve(path);
+      String path, HttpMethod method, HttpHeader header, Object body) {
+    try {
+      URI requestUri = serverUrl.resolve(path);
 
-    HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(requestUri);
+      HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(requestUri);
 
-    if (header != null) {
-      requestBuilder.header(header.getName(), header.getValue());
-    }
-
-    if (body != null) {
-      String jsonBody = objectMapper.writeValueAsString(body);
-      HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofString(jsonBody);
-
-      switch (method) {
-        case "POST" -> requestBuilder.POST(bodyPublisher);
-        case "PUT" -> requestBuilder.PUT(bodyPublisher);
-        case "PATCH" -> requestBuilder.method("PATCH", bodyPublisher);
-        default -> throw new SdkException("Unsupported HTTP method with body: " + method);
+      if (header != null) {
+        requestBuilder.header(header.getName(), header.getValue());
       }
-      requestBuilder.header("Content-Type", "application/json");
-    } else {
-      switch (method) {
-        case "GET" -> requestBuilder.GET();
-        case "DELETE" -> requestBuilder.DELETE();
-        case "POST" -> requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
-        default -> requestBuilder.method(method, HttpRequest.BodyPublishers.noBody());
-      }
-    }
 
-    HttpRequest request = requestBuilder.build();
-    return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+      if (body != null) {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofString(jsonBody);
+
+        switch (method) {
+          case POST -> requestBuilder.POST(bodyPublisher);
+          case PUT -> requestBuilder.PUT(bodyPublisher);
+          case PATCH -> requestBuilder.method("PATCH", bodyPublisher);
+          default -> throw new SdkException("Unsupported HTTP method with body: " + method);
+        }
+        requestBuilder.header("Content-Type", "application/json");
+      } else {
+        switch (method) {
+          case GET -> requestBuilder.GET();
+          case DELETE -> requestBuilder.DELETE();
+          case POST -> requestBuilder.POST(HttpRequest.BodyPublishers.noBody());
+          default -> requestBuilder.method(method.name(), HttpRequest.BodyPublishers.noBody());
+        }
+      }
+
+      HttpRequest request = requestBuilder.build();
+      return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+
+      throw new SdkException(
+          "Interrupted while waiting for response from " + path + ": " + ex.getMessage());
+    } catch (IOException ex) {
+      throw new SdkException(
+          "Network or I/O error during request to " + path + ": " + ex.getMessage());
+    }
   }
 
-  private void executeRequest(String path, String method, HttpHeader header, Object requestBody) {
+  private void executeRequest(
+      String path, HttpMethod method, HttpHeader header, Object requestBody) {
     executeRequest(path, method, header, requestBody, response -> null);
   }
 
   private <T> T executeRequest(
-      String path, String method, HttpHeader header, Object requestBody, TypeReference<T> ref) {
+      String path, HttpMethod method, HttpHeader header, Object requestBody, TypeReference<T> ref) {
     return executeRequest(
         path, method, header, requestBody, response -> readResponse(response.body(), ref));
   }
 
   private <T> T executeRequest(
       String path,
-      String method,
+      HttpMethod method,
       HttpHeader header,
       Object requestBody,
       ResponseProcessor<T> responseProcessor) {
@@ -288,7 +302,7 @@ public class ServerClientImpl implements ServerClient {
         throw new IamcoreServerException(
             "Server error (Status " + responseCode + "): " + errorMessage, responseCode);
       }
-    } catch (IOException | InterruptedException ex) {
+    } catch (IOException ex) {
       throw new SdkException(
           "Network or I/O error during request to " + path + ": " + ex.getMessage());
     }
@@ -300,8 +314,7 @@ public class ServerClientImpl implements ServerClient {
         return "No error response body available.";
       }
 
-      Map<String, String> errorResponse =
-          readResponse(responseBody, new TypeReference<Map<String, String>>() {});
+      Map<String, String> errorResponse = readResponse(responseBody, new TypeReference<>() {});
 
       return errorResponse.getOrDefault("message", "Unknown server error.");
     } catch (SdkException ex) {
@@ -319,7 +332,14 @@ public class ServerClientImpl implements ServerClient {
 
   @FunctionalInterface
   private interface ResponseProcessor<T> {
-
     T process(HttpResponse<String> response) throws IOException;
+  }
+
+  enum HttpMethod {
+    GET,
+    POST,
+    PUT,
+    PATCH,
+    DELETE
   }
 }
