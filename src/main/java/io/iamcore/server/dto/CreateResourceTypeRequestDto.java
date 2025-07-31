@@ -1,27 +1,26 @@
 package io.iamcore.server.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.iamcore.StringUtils;
 import io.iamcore.exception.SdkException;
 import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
-public class CreateResourceTypeRequestDto {
-  private final String type;
-  private final String description;
-  private final String actionPrefix;
-  private final Set<String> operations;
+@JsonInclude(Include.NON_EMPTY)
+public record CreateResourceTypeRequestDto(
+    String type,
+    String description,
+    @JsonProperty("actionPrefix") String actionPrefix,
+    Set<String> operations) {
 
-  public CreateResourceTypeRequestDto(String type, String description, String actionPrefix, Set<String> operations) {
+  public CreateResourceTypeRequestDto {
     if (StringUtils.isEmpty(type)) {
       throw new SdkException("resource type must be defined");
     }
-
-    this.type = type;
-    this.description = description;
-    this.actionPrefix = actionPrefix;
-    this.operations = operations;
   }
+
+  /* Getters for backward compatibility */
 
   public String getType() {
     return type;
@@ -38,29 +37,4 @@ public class CreateResourceTypeRequestDto {
   public Set<String> getOperations() {
     return operations;
   }
-
-  public JSONObject toJson() {
-    JSONObject json = new JSONObject();
-    json.put("type", type);
-
-    if (StringUtils.isEmpty(type)) {
-      json.put("description", description);
-    }
-
-    if (StringUtils.isEmpty(actionPrefix)) {
-      json.put("actionPrefix", actionPrefix);
-    }
-
-    if (StringUtils.isEmpty(description)) {
-      json.put("description", description);
-    }
-
-    if (operations != null && !operations.isEmpty()) {
-      json.put("operations", new JSONArray(operations));
-    }
-
-    return json;
-  }
 }
-
-

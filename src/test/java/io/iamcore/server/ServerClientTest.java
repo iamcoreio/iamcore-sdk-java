@@ -1,6 +1,7 @@
 package io.iamcore.server;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static io.iamcore.server.ServerClientImpl.*;
 import static org.assertj.core.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +14,7 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
-import io.iamcore.server.dto.PoolInfo;
+import io.iamcore.server.dto.PoolResponse;
 import io.iamcore.server.dto.PoolsQueryFilter;
 import io.iamcore.server.dto.ResourceTypeDto;
 import io.iamcore.server.dto.UpdateResourceRequestDto;
@@ -31,18 +32,6 @@ import org.junit.jupiter.api.Test;
 class ServerClientTest {
 
   private static final String TEST_AUTH_TOKEN = "test-auth-token";
-  private static final String USER_IRN_PATH = "/api/v1/users/me/irn";
-  private static final String EVALUATE_PATH = "/api/v1/evaluate";
-  private static final String RESOURCES_EVALUATE_PATH =
-      "/api/v1/resources/evaluate?filterResources=true";
-  private static final String EVALUATE_RESOURCES_PATH = "/api/v1/evaluate/resources";
-  private static final String AUTHORIZATION_QUERY_FILTER_PATH =
-      "/api/v1/evaluate/database-query-filter";
-  private static final String RESOURCE_PATH = "/api/v1/resources";
-  private static final String APPLICATION_PATH = "/api/v1/applications";
-  private static final String RESOURCE_TYPE_PATH = APPLICATION_PATH + "/%s/resource-types";
-  private static final String API_KEY_PATH = "/api/v1/principals/%s/api-keys";
-  private static final String POOLS_PATH = "/api/v1/pools";
 
   private IRN testPrincipalIrn;
   private IRN testResourceIrn;
@@ -58,7 +47,8 @@ class ServerClientTest {
     URI connectionUrl = URI.create(wmRuntimeInfo.getHttpBaseUrl());
     testPrincipalIrn = IRN.of("iamcore", "user", "", "/pool", "user", "", "test-user");
     testResourceIrn = IRN.of("iamcore", "resource", "", "/pool", "document", "", "test-doc");
-    testApplicationIrn = IRN.of("iamcore", "application", "", "/pool", "application", "", "test-app");
+    testApplicationIrn =
+        IRN.of("iamcore", "application", "", "/pool", "application", "", "test-app");
     authHeader = new HttpHeader("Authorization", TEST_AUTH_TOKEN);
     serverClient = new ServerClientImpl(connectionUrl, objectMapper);
   }
@@ -266,9 +256,9 @@ class ServerClientTest {
 
     // when & then
     assertThatThrownBy(
-        () ->
-            serverClient.authorizedOnResourceType(
-                authHeader, action, application, tenantId, resourceType))
+            () ->
+                serverClient.authorizedOnResourceType(
+                    authHeader, action, application, tenantId, resourceType))
         .isInstanceOf(IamcoreServerException.class)
         .hasMessageContaining("Insufficient permissions");
   }
@@ -491,7 +481,7 @@ class ServerClientTest {
         new CreateResourceTypeRequestDto(
             "document", "Document resource type", "doc", new HashSet<>());
     stubFor(
-        post(urlEqualTo(String.format(RESOURCE_TYPE_PATH, testApplicationIrn.toBase64())))
+        post(urlEqualTo(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64())))
             .willReturn(
                 aResponse()
                     .withStatus(201)
@@ -500,7 +490,7 @@ class ServerClientTest {
 
     // when & then
     assertThatCode(
-        () -> serverClient.createResourceType(authHeader, testApplicationIrn, requestDto))
+            () -> serverClient.createResourceType(authHeader, testApplicationIrn, requestDto))
         .doesNotThrowAnyException();
   }
 
@@ -511,7 +501,7 @@ class ServerClientTest {
         new CreateResourceTypeRequestDto(
             "document", "Document resource type", "doc", new HashSet<>());
     stubFor(
-        post(urlEqualTo(String.format(RESOURCE_TYPE_PATH, testApplicationIrn.toBase64())))
+        post(urlEqualTo(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64())))
             .willReturn(
                 aResponse()
                     .withStatus(409)
@@ -520,7 +510,7 @@ class ServerClientTest {
 
     // when & then
     assertThatThrownBy(
-        () -> serverClient.createResourceType(authHeader, testApplicationIrn, requestDto))
+            () -> serverClient.createResourceType(authHeader, testApplicationIrn, requestDto))
         .isInstanceOf(IamcoreServerException.class)
         .hasMessageContaining("Resource type already exists");
   }
@@ -532,7 +522,7 @@ class ServerClientTest {
     CreateResourceTypeRequestDto requestDto =
         new CreateResourceTypeRequestDto("document", "Document resource type", "doc", operations);
     stubFor(
-        post(urlEqualTo(String.format(RESOURCE_TYPE_PATH, testApplicationIrn.toBase64())))
+        post(urlEqualTo(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64())))
             .withRequestBody(containing("\"operations\":["))
             .willReturn(
                 aResponse()
@@ -542,7 +532,7 @@ class ServerClientTest {
 
     // when & then
     assertThatCode(
-        () -> serverClient.createResourceType(authHeader, testApplicationIrn, requestDto))
+            () -> serverClient.createResourceType(authHeader, testApplicationIrn, requestDto))
         .doesNotThrowAnyException();
   }
 
@@ -551,21 +541,21 @@ class ServerClientTest {
     // given
     String responseBody =
         """
+        {
+          "data": [
             {
-              "data": [
-                {
-                  "id": "type1",
-                  "type": "document",
-                  "description": "Document type",
-                  "actionPrefix": "doc",
-                  "operations": ["read", "write"]
-                }
-              ]
+              "id": "type1",
+              "type": "document",
+              "description": "Document type",
+              "actionPrefix": "doc",
+              "operations": ["read", "write"]
             }
-            """;
+          ]
+        }
+        """;
 
     stubFor(
-        get(urlMatching(String.format(RESOURCE_TYPE_PATH, testApplicationIrn.toBase64()) + "\\?.*"))
+        get(urlMatching(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64()) + "\\?.*"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -589,7 +579,7 @@ class ServerClientTest {
   void getResourceTypes_serverError() {
     // given
     stubFor(
-        get(urlMatching(String.format(RESOURCE_TYPE_PATH, testApplicationIrn.toBase64()) + "\\?.*"))
+        get(urlMatching(String.format(RESOURCE_TYPE_PATH_TEMPLATE, testApplicationIrn.toBase64()) + "\\?.*"))
             .willReturn(
                 aResponse()
                     .withStatus(404)
@@ -607,7 +597,7 @@ class ServerClientTest {
     // given
     String expectedApiKey = "test-api-key";
     stubFor(
-        get(urlMatching(String.format(API_KEY_PATH, testPrincipalIrn.toBase64()) + "\\?.*"))
+        get(urlMatching(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64()) + "\\?.*"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -626,7 +616,7 @@ class ServerClientTest {
   void getPrincipalApiKey_notFound() {
     // given
     stubFor(
-        get(urlMatching(String.format(API_KEY_PATH, testPrincipalIrn.toBase64()) + "\\?.*"))
+        get(urlMatching(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64()) + "\\?.*"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -644,7 +634,7 @@ class ServerClientTest {
   void getPrincipalApiKey_serverError() {
     // given
     stubFor(
-        get(urlMatching(String.format(API_KEY_PATH, testPrincipalIrn.toBase64()) + "\\?.*"))
+        get(urlMatching(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64()) + "\\?.*"))
             .willReturn(
                 aResponse()
                     .withStatus(403)
@@ -662,7 +652,7 @@ class ServerClientTest {
     // given
     String expectedApiKeyId = "new-api-key-id";
     stubFor(
-        post(urlEqualTo(String.format(API_KEY_PATH, testPrincipalIrn.toBase64())))
+        post(urlEqualTo(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64())))
             .willReturn(
                 aResponse()
                     .withStatus(201)
@@ -684,7 +674,7 @@ class ServerClientTest {
   void createPrincipalApiKey_serverError() {
     // given
     stubFor(
-        post(urlEqualTo(String.format(API_KEY_PATH, testPrincipalIrn.toBase64())))
+        post(urlEqualTo(String.format(API_KEY_PATH_TEMPLATE, testPrincipalIrn.toBase64())))
             .willReturn(
                 aResponse()
                     .withStatus(400)
@@ -702,19 +692,19 @@ class ServerClientTest {
     // given
     String responseBody =
         """
+        {
+          "data": [
             {
-              "data": [
-                {
-                  "id": "aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjpwb29sL3Byb2QvYWRtaW4=",
-                  "irn": "irn:rc73dbh7q0:iamcore:4atcicnisg::pool/prod/admin",
-                  "name": "Test Pool",
-                  "resources": [
-                    "aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjp1c2VyL3RvbQ=="
-                  ]
-                }
+              "id": "aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjpwb29sL3Byb2QvYWRtaW4=",
+              "irn": "irn:rc73dbh7q0:iamcore:4atcicnisg::pool/prod/admin",
+              "name": "Test Pool",
+              "resources": [
+                "aXJuOnJjNzNkYmg3cTA6aWFtY29yZTo0YXRjaWNuaXNnOjp1c2VyL3RvbQ=="
               ]
             }
-            """;
+          ]
+        }
+        """;
 
     IRN resourceIrn = IRN.from("irn:rc73dbh7q0:iamcore:4atcicnisg::user/tom");
     IRN poolIrn = IRN.from("irn:rc73dbh7q0:iamcore:4atcicnisg::pool/prod/admin");
@@ -722,12 +712,16 @@ class ServerClientTest {
 
     stubFor(
         get(urlMatching(
-            POOLS_PATH
-                + "\\?"
-                + "(?=.*pageSize=100000)"
-                + "(?=.*resourceIRN=" + resourceIrn.toBase64() + ")"
-                + "(?=.*irn=" + poolIrn.toBase64() + ")"
-                + "[^\\s]*"))
+                POOLS_PATH
+                    + "\\?"
+                    + "(?=.*pageSize=100000)"
+                    + "(?=.*resourceIRN="
+                    + resourceIrn.toBase64()
+                    + ")"
+                    + "(?=.*irn="
+                    + poolIrn.toBase64()
+                    + ")"
+                    + "[^\\s]*"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -735,7 +729,7 @@ class ServerClientTest {
                     .withBody(responseBody)));
 
     // when
-    List<PoolInfo> pools = serverClient.getPools(authHeader, filter);
+    List<PoolResponse> pools = serverClient.getPools(authHeader, filter);
 
     // then
     assertThat(pools).hasSize(1);
@@ -761,7 +755,7 @@ class ServerClientTest {
                     .withBody("{\"data\": null}")));
 
     // when
-    List<PoolInfo> pools = serverClient.getPools(authHeader, filter);
+    List<PoolResponse> pools = serverClient.getPools(authHeader, filter);
 
     // then
     assertThat(pools).isEmpty();

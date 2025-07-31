@@ -6,10 +6,10 @@ import io.iamcore.IRN;
 import io.iamcore.StringUtils;
 import java.util.List;
 
-public record PoolInfo(String id, IRN irn, String name, List<String> resources) {
+public record PoolResponse(String id, IRN irn, String name, List<String> resources) {
 
   @JsonCreator
-  public PoolInfo(
+  public PoolResponse(
       @JsonProperty("id") String id,
       @JsonProperty("irn") String irn,
       @JsonProperty("name") String name,

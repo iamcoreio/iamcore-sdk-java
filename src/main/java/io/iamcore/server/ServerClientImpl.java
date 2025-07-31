@@ -17,7 +17,7 @@ import io.iamcore.server.dto.DeleteResourcesRequestDto;
 import io.iamcore.server.dto.EvaluateResourceTypeRequest;
 import io.iamcore.server.dto.EvaluateResourcesRequest;
 import io.iamcore.server.dto.PageableResponse;
-import io.iamcore.server.dto.PoolInfo;
+import io.iamcore.server.dto.PoolResponse;
 import io.iamcore.server.dto.PoolsQueryFilter;
 import io.iamcore.server.dto.ResourceResponse;
 import io.iamcore.server.dto.ResourceTypeDto;
@@ -45,8 +45,8 @@ public class ServerClientImpl implements ServerClient {
       "/api/v1/evaluate/database-query-filter";
   public static final String RESOURCE_PATH = "/api/v1/resources";
   public static final String APPLICATION_PATH = "/api/v1/applications";
-  public static final String RESOURCE_TYPE_PATH = APPLICATION_PATH + "/%s/resource-types";
-  public static final String API_KEY_PATH = "/api/v1/principals/%s/api-keys";
+  public static final String RESOURCE_TYPE_PATH_TEMPLATE = APPLICATION_PATH + "/%s/resource-types";
+  public static final String API_KEY_PATH_TEMPLATE = "/api/v1/principals/%s/api-keys";
   public static final String POOLS_PATH = "/api/v1/pools";
   private static final int PAGE_SIZE = 100000;
 
@@ -155,14 +155,14 @@ public class ServerClientImpl implements ServerClient {
   @Override
   public void createResourceType(
       HttpHeader header, IRN application, CreateResourceTypeRequestDto requestDto) {
-    String path = String.format(RESOURCE_TYPE_PATH, application.toBase64());
+    String path = String.format(RESOURCE_TYPE_PATH_TEMPLATE, application.toBase64());
     executeRequest(path, "POST", header, requestDto);
   }
 
   @Override
   public List<ResourceTypeDto> getResourceTypes(HttpHeader header, IRN applicationIrn) {
     String path =
-        RESOURCE_TYPE_PATH.formatted(applicationIrn.toBase64()) + "?pageSize=" + PAGE_SIZE;
+        RESOURCE_TYPE_PATH_TEMPLATE.formatted(applicationIrn.toBase64()) + "?pageSize=" + PAGE_SIZE;
 
     PageableResponse<ResourceTypeDto> pageOfResourceTypes =
         executeRequest(path, "GET", header, null, new TypeReference<>() {});
@@ -172,7 +172,8 @@ public class ServerClientImpl implements ServerClient {
 
   @Override
   public Optional<String> getPrincipalApiKey(HttpHeader header, IRN principalIrn) {
-    String path = API_KEY_PATH.formatted(principalIrn.toBase64()) + "?state=active&pageSize=1";
+    String path =
+        API_KEY_PATH_TEMPLATE.formatted(principalIrn.toBase64()) + "?state=active&pageSize=1";
 
     PageableResponse<ApiKeyResponse> pageOfApiKeys =
         executeRequest(path, "GET", header, null, new TypeReference<>() {});
@@ -182,7 +183,7 @@ public class ServerClientImpl implements ServerClient {
 
   @Override
   public String createPrincipalApiKey(HttpHeader header, IRN principalIrn) {
-    String url = API_KEY_PATH.formatted(principalIrn.toBase64());
+    String url = API_KEY_PATH_TEMPLATE.formatted(principalIrn.toBase64());
 
     return executeRequest(url, "POST", header, null, this::getIdFromLocationHeader);
   }
@@ -198,7 +199,7 @@ public class ServerClientImpl implements ServerClient {
   }
 
   @Override
-  public List<PoolInfo> getPools(HttpHeader header, PoolsQueryFilter filter) {
+  public List<PoolResponse> getPools(HttpHeader header, PoolsQueryFilter filter) {
     String poolIrn = filter.irn() == null ? "" : filter.irn().toBase64();
     String poolName = filter.name();
     String resourceIrn = filter.resourceIrn() == null ? "" : filter.resourceIrn().toBase64();
@@ -213,7 +214,7 @@ public class ServerClientImpl implements ServerClient {
     String rawQuery = buildRawQuery(queryParams);
     String path = POOLS_PATH + "?" + rawQuery;
 
-    PageableResponse<PoolInfo> pageOfPools =
+    PageableResponse<PoolResponse> pageOfPools =
         executeRequest(path, "GET", header, null, new TypeReference<>() {});
 
     return pageOfPools.data();

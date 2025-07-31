@@ -14,11 +14,17 @@ public class ResourceTypeDto {
   private LocalDateTime updated;
   private Set<String> operations;
 
-  public ResourceTypeDto() {
-  }
+  public ResourceTypeDto() {}
 
-  public ResourceTypeDto(String id, String irn, String type, String description, String actionPrefix,
-      LocalDateTime created, LocalDateTime updated, Set<String> operations) {
+  public ResourceTypeDto(
+      String id,
+      String irn,
+      String type,
+      String description,
+      String actionPrefix,
+      LocalDateTime created,
+      LocalDateTime updated,
+      Set<String> operations) {
     this.id = id;
     this.irn = irn;
     this.type = type;
