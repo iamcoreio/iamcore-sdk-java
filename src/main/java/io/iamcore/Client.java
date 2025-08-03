@@ -1,6 +1,7 @@
 package io.iamcore;
 
 import io.iamcore.server.dto.Database;
+import io.iamcore.server.dto.PoolsQueryFilter;
 import io.iamcore.server.dto.ResourceTypeDto;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -45,4 +46,6 @@ public interface Client {
   HttpHeader getApplicationApiKeyHeader();
 
   HttpHeader getTenantApiKeyHeader(String accountId, String tenantId);
+
+  Set<String> getPoolIds(HttpHeader authorizationHeader, PoolsQueryFilter filter);
 }

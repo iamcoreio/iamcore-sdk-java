@@ -6,6 +6,8 @@ import io.iamcore.server.dto.CreateResourceRequestDto;
 import io.iamcore.server.dto.CreateResourceTypeRequestDto;
 import io.iamcore.server.dto.Database;
 import io.iamcore.server.dto.DeleteResourcesRequestDto;
+import io.iamcore.server.dto.PoolResponse;
+import io.iamcore.server.dto.PoolsQueryFilter;
 import io.iamcore.server.dto.ResourceTypeDto;
 import io.iamcore.server.dto.UpdateResourceRequestDto;
 import java.util.List;
@@ -39,4 +41,6 @@ public interface ServerClient {
   Optional<String> getPrincipalApiKey(HttpHeader header, IRN principalIrn);
 
   String createPrincipalApiKey(HttpHeader header, IRN principalIrn);
+
+  List<PoolResponse> getPools(HttpHeader header, PoolsQueryFilter filter);
 }
