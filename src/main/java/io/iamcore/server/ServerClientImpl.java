@@ -204,9 +204,9 @@ public class ServerClientImpl implements ServerClient {
 
   @Override
   public List<PoolResponse> getPools(HttpHeader header, PoolsQueryFilter filter) {
-    String poolIrn = filter.irn() == null ? "" : filter.irn().toBase64();
+    String poolIrn = filter.irn() == null ? "" : filter.irn().toString();
     String poolName = filter.name();
-    String resourceIrn = filter.resourceIrn() == null ? "" : filter.resourceIrn().toBase64();
+    String resourceIrn = filter.resourceIrn() == null ? "" : filter.resourceIrn().toString();
 
     Map<String, String> queryParams =
         Map.of(
