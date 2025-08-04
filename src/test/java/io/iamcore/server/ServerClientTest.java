@@ -781,8 +781,8 @@ class ServerClientTest {
       stubFor(
           get(urlPathEqualTo(POOLS_PATH))
               .withQueryParam("pageSize", equalTo("100000"))
-              .withQueryParam("resourceIRN", equalTo(resourceIrn.toBase64()))
-              .withQueryParam("irn", equalTo(poolIrn.toBase64()))
+              .withQueryParam("resourceIRN", equalTo(resourceIrn.toString()))
+              .withQueryParam("irn", equalTo(poolIrn.toString()))
               .willReturn(
                   aResponse()
                       .withStatus(200)
