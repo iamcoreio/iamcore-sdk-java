@@ -1,5 +1,6 @@
 package io.iamcore.server.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,7 +8,7 @@ import io.iamcore.IRN;
 import java.util.List;
 
 @JsonInclude(Include.NON_EMPTY)
-public record DeleteResourcesRequestDto(List<IRN> irns) {
+public record DeleteResourcesRequestDto(@JsonIgnore List<IRN> irns) {
 
   @JsonProperty("resourceIDs")
   public List<String> getResourceIds() {
