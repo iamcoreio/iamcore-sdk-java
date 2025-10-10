@@ -2,7 +2,8 @@ package io.iamcore.server.dto;
 
 public enum Database {
   POSTGRES("postgres"),
-  MONGO("mongo");
+  MONGO("mongo"),
+  JPA("jpa");
 
   private final String value;
 
